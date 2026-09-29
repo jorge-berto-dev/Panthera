@@ -1,4 +1,4 @@
-Panthera v1 - 10 provas de seguranca (FASE 5) - 2026-09-29T21:33:17Z
+Panthera v1 - 10 provas de seguranca (FASE 5) - 2026-09-29T22:24:41Z
 Projeto: /home/khyb/panthera
 
 --- prova 1: ufw deny incoming / allow outgoing ---
