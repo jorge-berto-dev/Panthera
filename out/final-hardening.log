@@ -1,0 +1,21 @@
+== prova 1: ufw deny incoming / allow outgoing ==
+[OK] prova 1: ufw deny incoming / allow outgoing
+== prova 2: apparmor enforce (cmdline + servico) ==
+[OK] prova 2: apparmor enforce (cmdline + servico)
+== prova 3: dpkg sem snapd/apport/whoopsie/popularity ==
+[OK] prova 3: dpkg sem snapd/apport/whoopsie/popularity
+== prova 4: servicos enable so essenciais (sem snap/tracker) ==
+[OK] prova 4: servicos enable so essenciais (sem snap/tracker)
+== prova 5: policies.json (telemetria off, DoH Quad9, uBlock) ==
+[OK] prova 5: policies.json (telemetria off, DoH Quad9, uBlock)
+== prova 6: usb noexec,nodev,nosuid ==
+[OK] prova 6: usb noexec,nodev,nosuid
+== prova 7: privacy-manifest + removed-bloat + version ==
+[OK] prova 7: privacy-manifest + removed-bloat + version
+== prova 8: sudoers timeout 10 + limits core 0 ==
+[OK] prova 8: sudoers timeout 10 + limits core 0
+== prova 9: sysctl Panthera (Secao 3.4) ==
+[OK] prova 9: sysctl Panthera (Secao 3.4)
+== prova 10: clamav demanda sem daemon ==
+[OK] prova 10: clamav demanda sem daemon
+HARDENING PASS (10/10). Provas em out/provas.txt

@@ -1,0 +1,33 @@
+[Panthera FASE2 --check] validacao estatica...
+[OK] panthera-base.list
+[OK] sem snapd
+[OK] base bookworm
+[OK] hook 0100-locale executavel
+[OK] sintaxe 0100-locale
+[OK] hook 0200-branding executavel
+[OK] sintaxe 0200-branding
+[OK] hook 0300-firefox executavel
+[OK] sintaxe 0300-firefox
+[OK] hook 0400-hardening executavel
+[OK] sintaxe 0400-hardening
+[OK] hook 0500-calamares executavel
+[OK] sintaxe 0500-calamares
+[OK] hook 0600-cleanup executavel
+[OK] sintaxe 0600-cleanup
+[OK] sintaxe build-iso.sh
+[OK] policies.json valido
+[OK] distribution.ini
+[OK] calamares settings
+[OK] sysctl
+[OK] sudoers
+[OK] privacy-manifest
+[OK] compile panthera-central
+[OK] compile panthera-store
+[OK] compile panthera-updater
+[OK] compile panthera-welcome
+[OK] compile panthera-theme-check
+[OK] sintaxe scripts/panthera-doctor.sh
+[OK] sintaxe scripts/panthera-codecs.sh
+[OK] sintaxe scripts/panthera-superleve.sh
+[OK] sintaxe scripts/check-wayland.sh
+[FASE2 --check] PASS. Para ISO real rode em Debian 12: sudo ./build-iso.sh

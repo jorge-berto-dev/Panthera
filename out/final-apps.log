@@ -1,0 +1,46 @@
+== 1. COMPILE-OK (Secao 26.1) ==
+[OK] compile panthera-central
+[OK] compile panthera-store
+[OK] compile panthera-updater
+[OK] compile panthera-welcome
+[OK] compile panthera-theme-check
+[OK] sintaxe scripts/panthera-doctor.sh
+[OK] sintaxe scripts/panthera-codecs.sh
+[OK] sintaxe scripts/panthera-superleve.sh
+[OK] sintaxe scripts/check-wayland.sh
+== 2. --help sem display ==
+[OK] panthera-central --help
+[OK] panthera-store --help
+[OK] panthera-updater --help
+[OK] panthera-welcome --help
+== 3. Central tem 11 abas (Secao 16) ==
+11 abas: Wi-Fi e Rede, Bluetooth, Aparencia, Som, Energia, Privacidade, Seguranca, Usuarios, Impressoras, Atalhos e Idioma, Sobre
+[OK] 11 abas
+== 4. Nenhum callback sem try (Secao 20.6) ==
+clicked sempre via wrapper com try
+[OK] callbacks protegidos
+== 5. So stdlib + GTK3 (R6) ==
+imports ok: gi + stdlib
+[OK] imports R6
+== 6. theme-check aceita/rejeita (I9) ==
+[OK] tema bom aceito
+[OK] tema malicioso rejeitado
+[OK] sem theme.json rejeitado
+== 7. welcome abre 1 vez (I1) ==
+[OK] FLAG presente sai 0 sem display
+[OK] welcome --reset
+== 8. doctor --check (ODT Secao 10) ==
+[OK] doctor --help
+[OK] doctor arg invalido sai 2
+[OK] doctor --check all roda
+[OK] doctor gera log
+== 9. desktop + autostart ==
+OK includes.chroot/usr/share/applications/panthera-central.desktop
+OK includes.chroot/usr/share/applications/panthera-store.desktop
+OK includes.chroot/usr/share/applications/panthera-updater.desktop
+[OK] 3 desktop Exec
+[OK] autostart welcome
+== 10. staging usr/bin (build-iso.sh) ==
+[OK] 9 apps em /usr/bin
+[OK] build-iso.sh entrega apps
+APPS PASS. DoD visual (com display): abrir 11 abas, instalar VLC, atualizar, doutor all, welcome.

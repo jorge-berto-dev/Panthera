@@ -23,6 +23,8 @@ run() { # run <nome> <comando...>
     echo "FAIL estatico $N" >> "$MATRIZ"
     FAIL=1
   fi
+  # Preserva o log: o container do CI e --rm, /tmp some no fim do run
+  cp "/tmp/panthera-final-$N.log" "out/final-$N.log" 2>/dev/null || true
 }
 
 echo "== suites estaticas =="

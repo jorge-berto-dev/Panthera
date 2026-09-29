@@ -1,0 +1,54 @@
+== base ==
+[OK] base bookworm
+[OK] areas main contrib non-free-firmware
+== proibidos ==
+[OK] sem snapd
+[OK] fontes minimas (noto-core)
+[OK] sem CJK
+[OK] sem pacotes espiões na base
+== arquivos FASE 2-6 ==
+[OK] build-iso.sh
+[OK] packages-lists/panthera-base.list
+[OK] packages-lists/panthera-remove.list
+[OK] live-build-config/auto/config
+[OK] calamares/settings.conf
+[OK] firefox/policies.json
+[OK] firefox/distribution.ini
+[OK] scripts/panthera-doctor.sh
+[OK] scripts/check-wayland.sh
+[OK] scripts/panthera-central.py
+[OK] scripts/panthera-store.py
+[OK] scripts/panthera-updater.py
+[OK] scripts/panthera-welcome.py
+[OK] scripts/panthera-theme-check.py
+[OK] scripts/panthera-superleve.sh
+[OK] tests/test-hardening.sh
+[OK] tests/test-apps.sh
+[OK] tests/test-final.sh
+[OK] includes.chroot/usr/share/panthera-ajuda/index.html
+[OK] includes.chroot/usr/share/applications/panthera-central.desktop
+[OK] includes.chroot/usr/share/applications/panthera-store.desktop
+[OK] includes.chroot/usr/share/applications/panthera-updater.desktop
+[OK] includes.chroot/etc/xdg/autostart/panthera-welcome.desktop
+[OK] includes.chroot/etc/sysctl.d/99-panthera.conf
+[OK] includes.chroot/etc/sudoers.d/panthera
+[OK] includes.chroot/etc/panthera/privacy-manifest.txt
+[OK] includes.chroot/etc/panthera/removed-bloat.txt
+[OK] includes.chroot/etc/panthera/version
+[OK] includes.chroot/etc/security/limits.d/panthera.conf
+[OK] includes.chroot/etc/default/grub
+[OK] includes.chroot/etc/udisks2/mount_options.conf
+== hooks 0100-0600 ==
+[OK] 6 hooks
+[OK] hooks executaveis + sintaxe
+== configs ==
+[OK] policies.json valido
+[OK] policies sem telemetria
+[OK] sysctl 12 chaves (amostra ptrace_scope)
+[OK] sudoers timeout 10
+[OK] build-iso.sh sintaxe
+[OK] build-iso.sh lb config fiel Sec 11.1
+== ISO ==
+[AVISO] sem ISO em out/. Estatico PASS (FASE 1/2 pre-build).
+Proximo: sudo ./build-iso.sh (~30-60min) depois ./tests/test-iso.sh
+ESTATICO PASS. Proximo: QEMU + Ventoy manual (ODT Secao 12).

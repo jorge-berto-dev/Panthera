@@ -47,7 +47,8 @@ jobs:
             bash -c '
               set -euo pipefail
               apt-get update
-              apt-get install -y --no-install-recommends ca-certificates python3 file
+              apt-get install -y --no-install-recommends ca-certificates python3 file zip \
+                python3-gi gir1.2-gtk-3.0 xvfb dbus-x11
               df -h /
               ./FAZER-ISO-VM.sh
             ' 2>&1 | tee ci-out/docker-build.log
@@ -100,5 +101,6 @@ jobs:
             ci-out/docker-build.log
             ci-out/iso-build.log
             out/build.log
+            out/final-*.log
             ci-out/matriz.txt
             ci-out/provas.txt
