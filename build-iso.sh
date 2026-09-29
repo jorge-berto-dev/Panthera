@@ -51,7 +51,7 @@ fi
 # Build real exige root
 if [ "$EUID" -ne 0 ]; then echo "Rode com sudo (ou use ./build-iso.sh --check para validar sem root)"; exit 1; fi
 if [ "$1" = "--clean" ]; then lb clean --purge 2>/dev/null || true; rm -rf config binary .build cache; fi
-apt update && apt install -y live-build cdebootstrap debootstrap xorriso isolinux syslinux-efi grub-pc-bin grub-efi-amd64-bin mtools dosfstools squashfs-tools
+apt update && apt install -y live-build cdebootstrap debootstrap xorriso isolinux syslinux-efi grub-pc-bin grub-efi-amd64-bin mtools dosfstools squashfs-tools python3 file
 # Limpeza total: sem ela, resto de build falho quebra o debootstrap
 # ("Tried to extract package, but file already exists" = chroot/ sujo)
 lb clean --purge 2>/dev/null || true

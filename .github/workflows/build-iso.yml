@@ -47,7 +47,7 @@ jobs:
             bash -c '
               set -euo pipefail
               apt-get update
-              apt-get install -y --no-install-recommends ca-certificates
+              apt-get install -y --no-install-recommends ca-certificates python3 file
               df -h /
               ./FAZER-ISO-VM.sh
             ' 2>&1 | tee ci-out/docker-build.log
