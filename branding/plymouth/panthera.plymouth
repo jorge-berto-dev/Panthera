@@ -1,0 +1,8 @@
+[Plymouth Theme]
+Name=Panthera
+Description=Pantera azul sobre preto-azulado (ODT Secao 25.1)
+ModuleName=script
+
+[script]
+ImageDir=/usr/share/plymouth/themes/panthera
+ScriptFile=/usr/share/plymouth/themes/panthera/panthera.script

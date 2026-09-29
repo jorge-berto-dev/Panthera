@@ -1,0 +1,49 @@
+#!/bin/bash
+# hooks/live/0500-calamares.hook.chroot - instalador INSTALAR FASE 4 (ODT Secao 11, 15.4, 25.2)
+# Roda DENTRO do chroot. Idempotente. 6 telas texto literal + QSS Panthera.
+set -e
+mkdir -p /var/log/panthera
+echo "[0500-calamares] $(date -u +%Y-%m-%dT%H:%M:%SZ) inicio" | tee -a /var/log/panthera-hooks.log
+SRC="/tmp/panthera-src"
+if [ ! -d "$SRC/calamares" ] && [ -d calamares ]; then SRC="."; fi
+C="$SRC/calamares"
+
+# 1. settings.conf (8 modulos: welcome locale keyboard partition users summary install finish)
+mkdir -p /etc/calamares/modules /etc/calamares/branding/panthera
+if [ -f "$C/settings.conf" ]; then
+  cp "$C/settings.conf" /etc/calamares/settings.conf
+fi
+
+# 2. Modulos com texto literal Secao 11 (T1-T6)
+if [ -d "$C/modules" ]; then
+  cp "$C/modules/"*.conf /etc/calamares/modules/ || true
+fi
+
+# 3. Branding Panthera: desc + QSS + PNGs + slideshow
+# Calamares 3.3 le branding de /usr/share/calamares/branding; /etc e sobreposicao.
+mkdir -p /usr/share/calamares/branding/panthera
+if [ -d "$C/branding/panthera" ]; then
+  cp -r "$C/branding/panthera/"* /etc/calamares/branding/panthera/ || true
+  cp -r "$C/branding/panthera/"* /usr/share/calamares/branding/panthera/ || true
+fi
+
+# 4. Atalho INSTALAR gigante azul (Secao 7): menu + Desktop do Live
+# Exec com sudo -E (Secao 11: sem sudo puro, senao nao abre - trava 20.4)
+mkdir -p /usr/share/applications /etc/skel/Desktop
+if [ -f "$C/panthera-install.desktop" ]; then
+  cp "$C/panthera-install.desktop" /usr/share/applications/
+  cp "$C/panthera-install.desktop" /etc/skel/Desktop/ || true
+  chmod +x /etc/skel/Desktop/panthera-install.desktop 2>/dev/null || true
+  desktop-file-validate /usr/share/applications/panthera-install.desktop 2>/dev/null || echo "[0500-calamares] AVISO: desktop-file-validate ausente/divergente" | tee -a /var/log/panthera-hooks.log
+fi
+
+# 5. Doutor no Live (botao Abrir Doutor / Central)
+if [ -f "$SRC/scripts/panthera-doctor.sh" ]; then
+  cp "$SRC/scripts/panthera-doctor.sh" /usr/bin/panthera-doctor
+  chmod +x /usr/bin/panthera-doctor
+fi
+if [ -f "$SRC/scripts/check-wayland.sh" ]; then
+  cp "$SRC/scripts/check-wayland.sh" /usr/bin/panthera-check-wayland
+  chmod +x /usr/bin/panthera-check-wayland
+fi
+echo "[0500-calamares] OK 8 modulos + branding + atalho" | tee -a /var/log/panthera-hooks.log

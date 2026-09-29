@@ -1,0 +1,104 @@
+name: Panthera ISO
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: panthera-iso
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Mostrarversao
+        run: |
+          lsb_release -a 2>/dev/null || cat /etc/os-release
+          nproc
+          free -h
+          df -h / /mnt
+
+      - name: Liberar espaco no disco do runner
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /usr/local/share/boost
+          sudo apt-get clean
+          df -h /
+
+      - name: Compilar ISO em container Debian 12 (privilegiado)
+        run: |
+          set -euo pipefail
+          mkdir -p ci-out
+          docker run --rm --privileged \
+            -v "$PWD:/src" \
+            -v "$PWD/ci-out:/out" \
+            -w /src \
+            -e HOME=/out \
+            -e DEBIAN_FRONTEND=noninteractive \
+            debian:bookworm \
+            bash -c '
+              set -euo pipefail
+              apt-get update
+              apt-get install -y --no-install-recommends ca-certificates
+              df -h /
+              ./FAZER-ISO-VM.sh
+            ' 2>&1 | tee ci-out/docker-build.log
+
+      - name: Resumo do erro real
+        if: failure()
+        run: |
+          echo "############### ERRO REAL (leia aqui) ###############"
+          grep -nE "E: |error:|Error |lb build: |debootstrap:|No space left|not (found|available)|Error 2" ci-out/docker-build.log 2>/dev/null | tail -30 || echo "(nenhuma linha de erro reconhecida)"
+          echo "#######################################################"
+          echo ""
+          echo "---- ultimas 60 linhas ----"
+          tail -60 ci-out/docker-build.log 2>/dev/null || echo "(log vazio)"
+
+      - name: Conferir ISO e fatiar para download
+        run: |
+          set -euo pipefail
+          ls -lh out/
+          ISO=$(ls out/*.iso | head -1)
+          sha256sum -c "$ISO.sha256"
+          du -m "$ISO" | awk "{if (\$1 > 2252) { print \"ISO pesada: \" \$1 \"MB\"; exit 1 } else print \"peso OK: \" \$1 \"MB\"}"
+          rm -f ci-out/*.iso.part-*
+          split -b 1000M -d -a 2 "$ISO" ci-out/panthera-iso.part-
+          cp "$ISO.sha256" ci-out/
+          cp out/matriz.txt out/provas.txt ci-out/ 2>/dev/null || true
+          ls -lh ci-out/
+
+      - name: Publicar ISO no Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          TAG="${GITHUB_REF_NAME}"
+          [ "$TAG" = "main" ] && TAG="build-$(date -u +%Y%m%d-%H%M%S)"
+          gh release create "$TAG" ci-out/panthera-iso.part-* ci-out/*.sha256 ci-out/matriz.txt ci-out/provas.txt \
+            --title "Panthera v1 ISO ($TAG)" \
+            --notes "ISO live Panthera v1, gerada com live-build em Debian 12 bookworm. Boot UEFI e Legacy (isohybrid). Junte os pedacos (cat panthera-iso.part-* > panthera.iso) e confira o sha256 antes de gravar. Detalhes em guias/GUIA-VENTOY.md." \
+            --latest
+          echo "Release: $TAG"
+          gh release view "$TAG" --json url --jq .url
+
+      - name: Log e matrizes como artefato
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: panthera-logs
+          retention-days: 7
+          if-no-files-found: warn
+          path: |
+            ci-out/docker-build.log
+            ci-out/iso-build.log
+            out/build.log
+            ci-out/matriz.txt
+            ci-out/provas.txt

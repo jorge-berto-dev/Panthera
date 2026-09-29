@@ -1,0 +1,18 @@
+# Panthera GRUB theme 1024x768 (ODT Secao 25.1 + 20.3)
+# Paleta oficial: fundo #0B111C texto #F3F6F9 selecao #1D83FF
+title-text: "Panthera"
+desktop-color: "#0B111C"
+desktop-image: "background.png"
+title-font: "Inter Bold 16"
+title-color: "#F3F6F9"
++ boot_menu {
+  left = 30%
+  top = 40%
+  width = 40%
+  height = 30%
+  item_height = 32
+  item_spacing = 8
+  selected_item_color = "#1D83FF"
+  item_color = "#F3F6F9"
+  selected_item_pixmap_style = "select_*.png"
+}

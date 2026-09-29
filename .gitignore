@@ -1,0 +1,20 @@
+# build local do live-build (nao versionar)
+config/
+binary/
+.build/
+cache/
+chroot/
+bootstrap/
+live-image-*.iso
+binary.hybrid.iso
+
+# artefatos de build / nuvem
+out/*.iso
+out/*.iso.sha256
+out/build.log
+ci-out/
+
+# hooks compilados
+scripts/__pycache__/
+__pycache__/
+*.pyc

@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=Atualizador Panthera
+Comment=Atualiza tudo com 1 botao, sem reiniciar sozinho
+Exec=/usr/bin/panthera-updater
+Icon=system-software-update
+Terminal=false
+Type=Application
+Categories=Settings;System;
+Keywords=atualizar;update;upgrade;

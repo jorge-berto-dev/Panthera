@@ -1,0 +1,44 @@
+# branding/plymouth/panthera.script - splash Panthera (ODT Secao 25.1)
+# Fundo #0B111C + logo 200px centro + barra #1D83FF
+# Teste: sudo plymouthd --debug --debug-file=/tmp/plymouth.log; sudo plymouth --show-splash
+Window.SetBackgroundTopColor (0.04, 0.07, 0.11);
+Window.SetBackgroundBottomColor (0.08, 0.11, 0.17);
+
+# Logo central 200px (logo.png exportado do wallpaper.svg)
+logo.image = Image ("logo.png");
+logo.sprite = Sprite (logo.image);
+logo.width = logo.image.GetWidth ();
+logo.height = logo.image.GetHeight ();
+logo.x = Window.GetX () + Window.GetWidth () / 2 - logo.width / 2;
+logo.y = Window.GetY () + Window.GetHeight () / 2 - logo.height / 2 - 40;
+logo.sprite.SetPosition (logo.x, logo.y, 100);
+
+# Texto PANTHERA abaixo do logo
+panthera.text = Image.Text ("PANTHERA", 1, 0.95, 0.98, "Inter 16");
+panthera.sprite = Sprite (panthera.text);
+panthera.sprite.SetPosition (Window.GetWidth () / 2 - panthera.text.GetWidth () / 2, logo.y + logo.height + 16, 100);
+
+# Barra de progresso azul eletrico #1D83FF (0.11,0.51,1.0)
+progress.bar.background = Image (Window.GetWidth () - 400, 8);
+progress.bar.background.Fill (0.08, 0.11, 0.17);
+progress.bar.sprite = Sprite (progress.bar.background);
+progress.bar.sprite.SetPosition (200, Window.GetHeight () - 120, 100);
+
+fun progress_callback (duration, progress) {
+  if (progress > 1) progress = 1;
+  bar.width = (Window.GetWidth () - 400) * progress;
+  bar.image = Image (bar.width, 8);
+  bar.image.Fill (0.11, 0.51, 1.0);
+  bar.sprite = Sprite (bar.image);
+  bar.sprite.SetPosition (200, Window.GetHeight () - 120, 101);
+}
+
+Plymouth.SetBootProgressFunction (progress_callback);
+
+# Mensagens (modo detalhe)
+fun message_callback (text) {
+  msg = Image.Text (text, 0.52, 0.56, 0.64, "Inter 10");
+  msg.sprite = Sprite (msg);
+  msg.sprite.SetPosition (Window.GetWidth () / 2 - msg.GetWidth () / 2, Window.GetHeight () - 80, 100);
+}
+Plymouth.SetMessageFunction (message_callback);

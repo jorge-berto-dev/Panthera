@@ -1,0 +1,35 @@
+#!/bin/bash
+# hooks/live/0600-cleanup.hook.chroot - limpeza final para ISO <=2,2GB (ODT Secao 15.3 + 20.7)
+# Roda DENTRO do chroot POR ULTIMO. Idempotente.
+# Ordem de corte Secao 20.7: CJK -> docs -> impressoras raras -> jogos.
+# (base nao tem CJK/jogos; o gordo e locale + help + listas apt.)
+# Nunca corta: firmware, Firefox, Calamares (Secao 8).
+set -e
+mkdir -p /var/log/panthera
+echo "[0600-cleanup] $(date -u +%Y-%m-%dT%H:%M:%SZ) inicio" | tee -a /var/log/panthera-hooks.log
+ANTES=$(du -sm / 2>/dev/null | cut -f1)
+# Limpa cache apt
+apt clean || true
+# Remove docs/mans/info (nunca firmware, Firefox ou Wi-Fi - Secao 8)
+rm -rf /usr/share/doc/* /usr/share/man/* /usr/share/info/* 2>/dev/null || true
+rm -rf /usr/share/lintian/* /usr/share/linda/* /usr/share/gtk-doc/* 2>/dev/null || true
+# Ajuda GNOME (yelp): pesada, ajuda Panthera offline fica em /usr/share/panthera-ajuda
+rm -rf /usr/share/help/* 2>/dev/null || true
+# JS offline (mathjax): ajuda GNOME ja removida acima, nada no Live usa
+rm -rf /usr/share/javascript/* 2>/dev/null || true
+# Locales: mantem PT-BR + reserva EN, remove o resto (~150-250MB)
+if [ -d /usr/share/locale ]; then
+  ls /usr/share/locale | grep -v -E "^(pt_BR|pt|en_US|en|locale.alias)$" | while read -r l; do
+    rm -rf "/usr/share/locale/$l" 2>/dev/null || true
+  done
+  echo "[0600-cleanup] locales restantes: $(ls /usr/share/locale | tr '\n' ' ')" | tee -a /var/log/panthera-hooks.log
+fi
+# Listas apt do Live (inuteis no Live;pos-install faz apt update)
+rm -rf /var/lib/apt/lists/* 2>/dev/null || true
+rm -rf /var/cache/apt/* /var/cache/debconf/*-old 2>/dev/null || true
+rm -rf /tmp/panthera-src 2>/dev/null || true
+rm -rf /tmp/* /var/tmp/* 2>/dev/null || true
+mkdir -p /var/log/panthera
+DEPOIS=$(du -sm / 2>/dev/null | cut -f1)
+echo "[0600-cleanup] chroot ${ANTES}MB -> ${DEPOIS}MB" | tee -a /var/log/panthera-hooks.log
+echo "$(date -u +%Y-%m-%dT%H:%M:%SZ) cleanup ok" | tee -a /var/log/panthera-hooks.log

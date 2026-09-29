@@ -1,0 +1,62 @@
+#!/bin/bash
+# hooks/live/0400-hardening.hook.chroot - seguranca base FASE 5 (ODT Secao 3.3, 3.4, 9, 15.3 e 32)
+# Roda DENTRO do chroot. Idempotente. Falhas de servico em chroot nao abortam (|| true).
+# Ordem UFW canonica Secao 9: defaults -> allows -> enable.
+set -e
+mkdir -p /var/log/panthera
+echo "[0400-hardening] $(date -u +%Y-%m-%dT%H:%M:%SZ) inicio" | tee -a /var/log/panthera-hooks.log
+SRC="/tmp/panthera-src"
+if [ ! -d "$SRC" ] && [ -d includes.chroot ]; then SRC="."; fi
+INC="$SRC/includes.chroot/etc"
+# Sysctl Panthera (Secao 3.4). Ja vem via includes; copia de reserva via SRC.
+if [ -f "$INC/sysctl.d/99-panthera.conf" ]; then
+  cp "$INC/sysctl.d/99-panthera.conf" /etc/sysctl.d/99-panthera.conf
+elif [ -f /etc/sysctl.d/99-panthera.conf ]; then
+  echo "[0400-hardening] sysctl ja via includes.chroot" | tee -a /var/log/panthera-hooks.log
+fi
+# Sudo: timeout curto + 3 tentativas, dono root 440 (Secao 32)
+if [ -f "$INC/sudoers.d/panthera" ]; then
+  cp "$INC/sudoers.d/panthera" /etc/sudoers.d/panthera
+fi
+chown root:root /etc/sudoers.d/panthera 2>/dev/null || true
+chmod 440 /etc/sudoers.d/panthera 2>/dev/null || true
+visudo -c 2>/dev/null || echo "[0400-hardening] AVISO: visudo ausente, confira sintaxe" | tee -a /var/log/panthera-hooks.log
+# Sem core dump (Secao 32)
+mkdir -p /etc/security/limits.d
+if [ -f "$INC/security/limits.d/panthera.conf" ]; then
+  cp "$INC/security/limits.d/panthera.conf" /etc/security/limits.d/panthera.conf
+else
+  echo "* hard core 0" > /etc/security/limits.d/panthera.conf
+fi
+# GRUB: cmdline apparmor + os-prober + tema (Secao 32, vale no instalado via update-grub)
+if [ -f "$INC/default/grub" ]; then
+  cp "$INC/default/grub" /etc/default/grub
+fi
+# USB seguro I7: udisks monta /media com noexec,nodev,nosuid
+mkdir -p /etc/udisks2
+if [ -f "$INC/udisks2/mount_options.conf" ]; then
+  cp "$INC/udisks2/mount_options.conf" /etc/udisks2/mount_options.conf
+fi
+# Firewall padrao deny-in (Secao 9). Em chroot pode falhar sem kernel -> nao aborta.
+# Trava 20.5: se inativo no chroot, o pos-install do Calamares reabilita (finish).
+ufw default deny incoming || true
+ufw default allow outgoing || true
+ufw allow out 53,80,443/tcp || true
+ufw allow out 53/udp || true
+ufw --force enable || echo "[0400-hardening] AVISO: ufw enable falhou no chroot, pos-install reabilita" | tee -a /var/log/panthera-hooks.log
+# Servicos Secao 3.3: enable essenciais, nada de snap/tracker/apport
+systemctl enable ufw apparmor unattended-upgrades cups NetworkManager systemd-timesyncd 2>/dev/null || true
+# Purga espionagem e peso morto (Secao 3.2). Nao falha se ausente.
+apt purge -y snapd apport popularity-contest whoopsie 2>/dev/null || true
+# Manifestos OBRIGATORIOS (RNF002 + auditoria item 9)
+mkdir -p /etc/panthera
+if [ -f "$INC/panthera/privacy-manifest.txt" ]; then
+  cp "$INC/panthera/privacy-manifest.txt" /etc/panthera/privacy-manifest.txt
+fi
+if [ -f "$INC/panthera/removed-bloat.txt" ]; then
+  cp "$INC/panthera/removed-bloat.txt" /etc/panthera/removed-bloat.txt
+fi
+if [ -f "$INC/panthera/version" ]; then
+  cp "$INC/panthera/version" /etc/panthera/version
+fi
+echo "[0400-hardening] OK" | tee -a /var/log/panthera-hooks.log

@@ -1,0 +1,19 @@
+#!/bin/bash
+# hooks/live/0100-locale.hook.chroot - PT-BR, ABNT2, America/Sao_Paulo (ODT Secao 15.3)
+# Roda DENTRO do chroot. Idempotente.
+set -e
+# Log simples para auditoria FASE 2
+mkdir -p /var/log/panthera
+echo "[0100-locale] $(date -u +%Y-%m-%dT%H:%M:%SZ) inicio" | tee -a /var/log/panthera-hooks.log
+# Locales PT-BR + EN de reserva
+echo "pt_BR.UTF-8 UTF-8" > /etc/locale.gen
+echo "en_US.UTF-8 UTF-8" >> /etc/locale.gen
+locale-gen
+update-locale LANG=pt_BR.UTF-8 LANGUAGE=pt_BR:pt:en
+# Fuso oficial Panthera
+echo "America/Sao_Paulo" > /etc/timezone
+ln -sf /usr/share/zoneinfo/America/Sao_Paulo /etc/localtime
+# Teclado ABNT2
+mkdir -p /etc/default
+printf '%s\n' 'XKBMODEL="pc105"' 'XKBLAYOUT="br"' 'XKBVARIANT="abnt2"' > /etc/default/keyboard
+echo "[0100-locale] OK pt_BR ABNT2 Sao_Paulo" | tee -a /var/log/panthera-hooks.log

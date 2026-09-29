@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=INSTALAR Panthera
+Comment=Instalar Panthera no HD ou SSD
+Exec=sudo -E calamares
+Icon=panthera-install
+Terminal=false
+Type=Application
+Categories=System;

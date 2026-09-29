@@ -1,0 +1,10 @@
+[Desktop Entry]
+Name=Panthera Primeiro Passo
+Comment=Wizard inicial: Wi-Fi, favoritos, videos, papel (abre 1 vez)
+Exec=/usr/bin/panthera-welcome.py
+Icon=system-software-install
+Terminal=false
+Type=Application
+Categories=System;
+OnlyShowIn=XFCE;
+X-GNOME-Autostart-enabled=true

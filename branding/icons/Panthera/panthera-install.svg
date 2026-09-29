@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48">
+  <!-- INSTALAR: botao azul #1D83FF texto branco, hover #3A9BFF -->
+  <rect x="2" y="8" width="44" height="32" rx="8" fill="#1D83FF"/>
+  <path d="M24 14 v12 M18 20 l6 -6 6 6 M16 30 h16" stroke="#FFFFFF" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

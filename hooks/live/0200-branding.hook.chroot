@@ -1,0 +1,91 @@
+#!/bin/bash
+# hooks/live/0200-branding.hook.chroot - tema Panthera FASE 3 (ODT Secao 15.3 + 20.3 + 25.1)
+# Roda DENTRO do chroot. Usa /tmp/panthera-src (via includes) com fallback host.
+# Instala: GTK, icones, wallpaper, GRUB, Plymouth, greeter, skel.
+set -e
+mkdir -p /var/log/panthera
+echo "[0200-branding] $(date -u +%Y-%m-%dT%H:%M:%SZ) inicio" | tee -a /var/log/panthera-hooks.log
+# Descobre onde estao as fontes (chroot vs host)
+SRC="/tmp/panthera-src"
+if [ ! -d "$SRC/branding" ] && [ -d branding ]; then SRC="."; fi
+B="$SRC/branding"
+
+# 1. Tema GTK Panthera (paleta oficial Secao 4.1)
+mkdir -p /usr/share/themes/Panthera/gtk-3.0 /usr/share/themes/Panthera
+if [ -f "$B/themes/Panthera/gtk.css" ]; then
+  cp "$B/themes/Panthera/gtk.css" /usr/share/themes/Panthera/gtk-3.0/gtk.css
+  cp "$B/themes/Panthera/gtk.css" /usr/share/themes/Panthera/gtk.css
+else
+  echo "[0200-branding] AVISO: gtk.css ausente em $B" | tee -a /var/log/panthera-hooks.log
+fi
+
+# 2. Icones Panthera (outline 1.5px #1D83FF, herda Papirus)
+mkdir -p /usr/share/icons/Panthera
+if [ -d "$B/icons/Panthera" ]; then
+  cp -r "$B/icons/Panthera/"* /usr/share/icons/Panthera/ || true
+  gtk-update-icon-cache /usr/share/icons/Panthera 2>/dev/null || true
+fi
+
+# 3. Wallpaper oficial 1920x1080
+mkdir -p /usr/share/backgrounds/panthera
+if [ -f "$B/wallpaper.svg" ]; then
+  cp "$B/wallpaper.svg" /usr/share/backgrounds/panthera/wallpaper.svg
+else
+  echo "[0200-branding] AVISO: wallpaper.svg ausente" | tee -a /var/log/panthera-hooks.log
+fi
+
+# 4. GRUB 1024x768 (fundo #0B111C, selecao #1D83FF)
+mkdir -p /boot/grub/themes/panthera
+if [ -f "$B/grub/theme.txt" ]; then
+  cp "$B/grub/theme.txt" /boot/grub/themes/panthera/theme.txt
+fi
+# GRUB nao le SVG: renderiza background.png a partir do wallpaper se possivel
+if command -v rsvg-convert >/dev/null 2>&1; then
+  rsvg-convert -w 1024 -h 768 /usr/share/backgrounds/panthera/wallpaper.svg -o /boot/grub/themes/panthera/background.png 2>/dev/null || true
+elif command -v convert >/dev/null 2>&1; then
+  convert /usr/share/backgrounds/panthera/wallpaper.svg -resize 1024x768! /boot/grub/themes/panthera/background.png 2>/dev/null || true
+else
+  echo "[0200-branding] sem rsvg/convert: GRUB usa desktop-color #0B111C" | tee -a /var/log/panthera-hooks.log
+fi
+
+# 5. Plymouth (fundo #0B111C + barra #1D83FF)
+mkdir -p /usr/share/plymouth/themes/panthera
+if [ -f "$B/plymouth/panthera.plymouth" ]; then
+  cp "$B/plymouth/panthera.plymouth" /usr/share/plymouth/themes/panthera/panthera.plymouth
+fi
+if [ -f "$B/plymouth/panthera.script" ]; then
+  cp "$B/plymouth/panthera.script" /usr/share/plymouth/themes/panthera/panthera.script
+fi
+# Logo 200px para o splash (renderiza se possivel)
+if [ -f "$B/icons/Panthera/logo.svg" ]; then
+  if command -v rsvg-convert >/dev/null 2>&1; then
+    rsvg-convert -w 200 -h 200 "$B/icons/Panthera/logo.svg" -o /usr/share/plymouth/themes/panthera/logo.png 2>/dev/null || true
+  else
+    cp "$B/icons/Panthera/logo.svg" /usr/share/plymouth/themes/panthera/logo.svg 2>/dev/null || true
+  fi
+fi
+if command -v plymouth-set-default-theme >/dev/null 2>&1; then
+  plymouth-set-default-theme -R panthera 2>/dev/null || plymouth-set-default-theme panthera 2>/dev/null || true
+fi
+
+# 6. Tela de login slick-greeter (fonte Inter, sem ingles)
+mkdir -p /etc/lightdm
+if [ -f "$B/slick-greeter.conf" ]; then
+  cp "$B/slick-greeter.conf" /etc/lightdm/slick-greeter.conf
+else
+  cat > /etc/lightdm/slick-greeter.conf <<EOF
+[Greeter]
+background=/usr/share/backgrounds/panthera/wallpaper.svg
+theme-name=Panthera
+icon-theme-name=Panthera
+font-name=Inter 11
+show-hostname=true
+EOF
+fi
+
+# 7. Skel: tema padrao do usuario (nunca /usr /etc direto - RNF005)
+mkdir -p /etc/skel/.config/panthera
+if [ -d "$B/skel" ]; then
+  cp "$B/skel/"* /etc/skel/.config/panthera/ 2>/dev/null || true
+fi
+echo "[0200-branding] OK tema+icones+grub+plymouth+greeter" | tee -a /var/log/panthera-hooks.log

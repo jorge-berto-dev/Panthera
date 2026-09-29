@@ -1,0 +1,7 @@
+/* Panthera GTK - paleta real Figura 1 do ODT */
+:root{--panthera-bg:#0B111C;--panthera-surface:#141B2B;--panthera-accent:#1D83FF;--panthera-hover:#3A9BFF;--panthera-text:#F3F6F9;--panthera-muted:#8490A4}
+window,dialog{background:var(--panthera-surface);color:var(--panthera-text);font-family:Inter;font-size:10pt;border-radius:10px}
+button{background:var(--panthera-accent);color:#fff;border-radius:10px;padding:8px 16px;font-weight:bold}
+button:hover{background:var(--panthera-hover)}
+entry,search{border-radius:10px;padding:6px}
+panel,dock{background:var(--panthera-surface)}

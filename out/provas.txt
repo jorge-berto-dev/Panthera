@@ -1,0 +1,55 @@
+Panthera v1 - 10 provas de seguranca (FASE 5) - 2026-09-29T21:33:17Z
+Projeto: /home/khyb/panthera
+
+--- prova 1: ufw deny incoming / allow outgoing ---
+hook 0400: defaults -> allows -> enable OK
+RESULTADO: PASS
+
+--- prova 2: apparmor enforce (cmdline + servico) ---
+grub cmdline + enable + pacotes OK
+RESULTADO: PASS
+
+--- prova 3: dpkg sem snapd/apport/whoopsie/popularity ---
+base limpa + remove.list purga OK
+RESULTADO: PASS
+
+--- prova 4: servicos enable so essenciais (sem snap/tracker) ---
+enable: ufw apparmor upgrades cups NM timesyncd OK
+RESULTADO: PASS
+
+--- prova 5: policies.json (telemetria off, DoH Quad9, uBlock) ---
+policies + l10n-pt-br OK
+RESULTADO: PASS
+
+--- prova 6: usb noexec,nodev,nosuid ---
+udisks2 mount_options OK
+RESULTADO: PASS
+
+--- prova 7: privacy-manifest + removed-bloat + version ---
+manifestos OK
+RESULTADO: PASS
+
+--- prova 8: sudoers timeout 10 + limits core 0 ---
+sudoers + limits OK
+RESULTADO: PASS
+
+--- prova 9: sysctl Panthera (Secao 3.4) ---
+13 chaves fieis ao ODT OK
+RESULTADO: PASS
+
+--- prova 10: clamav demanda sem daemon ---
+clamav+clamtk sem daemon OK
+RESULTADO: PASS
+
+================ COMANDOS LIVE (Apendice H, colar no Debian apos build) ================
+# 1 pacotes: dpkg -l | grep -i -E 'snapd|apport|whoopsie|popularity|ubuntu-report' || echo LIMPO-OK
+# 2 servicos: systemctl list-unit-files --state=enabled | grep -E 'snapd|tracker|apport' || echo SERVICOS-OK
+# 3 firewall: sudo ufw status verbose  # active, deny incoming, allow outgoing
+# 4 apparmor: sudo aa-status | head -20  # enforce, firefox incluido
+# 5 sysctl: cat /etc/sysctl.d/99-panthera.conf  # 13 linhas
+# 6 rede: ss -tulpn  # so 127.0.0.1:631, dhcp, avahi; nada 0.0.0.0:22
+# 7 usb: mount | grep media  # noexec,nodev,nosuid
+# 8 manifestos: cat /etc/panthera/privacy-manifest.txt; cat /etc/panthera/removed-bloat.txt
+# 9 sudo/core: cat /etc/sudoers.d/panthera; cat /etc/security/limits.d/panthera.conf; ulimit -c  # 0
+# 10 clam: clamscan --version; ps aux | grep -i clam | grep -v grep || echo SEM-DAEMON-OK
+# 11 firefox: ls -l /usr/lib/firefox-esr/distribution/policies.json; abrir about:policies

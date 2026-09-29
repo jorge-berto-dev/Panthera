@@ -1,0 +1,10 @@
+# panthera-remove.list - purgar se puxado por dependência
+snapd
+apport
+whoopsie
+popularity-contest
+evolution*
+thunderbird*
+gnome-games*
+tracker*
+zeitgeist*

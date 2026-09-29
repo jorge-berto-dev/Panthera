@@ -1,0 +1,56 @@
+/* Calamares Panthera QSS (ODT Secao 11): fundo #0B111C, botao #1D83FF 200x56 16pt Inter */
+/* Teste: calamares -d 2>&1 | grep -i stylesheet sem erro */
+QWidget#main {
+  background-color: #0B111C;
+  color: #F3F6F9;
+  font-family: Inter;
+  font-size: 10pt;
+}
+QWidget#sidebar {
+  background-color: #0B111C;
+  color: #F3F6F9;
+}
+QLabel {
+  color: #F3F6F9;
+  font-family: Inter;
+}
+QLabel#title {
+  font-family: Montserrat;
+  font-weight: 800;
+  font-size: 16pt;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+}
+QPushButton {
+  background-color: #1D83FF;
+  color: #FFFFFF;
+  border-radius: 10px;
+  min-width: 200px;
+  min-height: 56px;
+  font-family: Inter;
+  font-size: 16pt;
+  font-weight: bold;
+}
+QPushButton:hover {
+  background-color: #3A9BFF;
+}
+QPushButton:disabled {
+  background-color: #141B2B;
+  color: #8490A4;
+}
+QProgressBar {
+  background-color: #141B2B;
+  border-radius: 6px;
+  text-align: center;
+  color: #F3F6F9;
+}
+QProgressBar::chunk {
+  background-color: #1D83FF;
+  border-radius: 6px;
+}
+QLineEdit, QComboBox {
+  background-color: #141B2B;
+  color: #F3F6F9;
+  border-radius: 10px;
+  padding: 6px;
+}

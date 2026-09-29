@@ -1,0 +1,37 @@
+#!/bin/bash
+# hooks/live/0300-firefox.hook.chroot - Firefox ESR PT-BR + policies + uBlock (ODT Secao 8 e 15.3)
+# Roda DENTRO do chroot. Idempotente.
+set -e
+mkdir -p /var/log/panthera
+echo "[0300-firefox] $(date -u +%Y-%m-%dT%H:%M:%SZ) inicio" | tee -a /var/log/panthera-hooks.log
+SRC="/tmp/panthera-src"
+if [ ! -d "$SRC/firefox" ] && [ -d firefox ]; then SRC="."; fi
+mkdir -p /usr/lib/firefox-esr/distribution
+# Policies OBRIGATORIAS (Secao 8: telemetria off, DoH Quad9, uBlock forcado)
+# Reprova o build se o JSON for invalido ou faltar chave (R7 DoD FASE 5)
+if [ -f "$SRC/firefox/policies.json" ]; then
+  python3 -m json.tool "$SRC/firefox/policies.json" >/dev/null
+  for chave in DisableTelemetry DisableFirefoxStudies DisablePocket DNSOverHTTPS ExtensionSettings; do
+    grep -q "$chave" "$SRC/firefox/policies.json" || { echo "[0300-firefox] FALHA: sem $chave em policies.json" | tee -a /var/log/panthera-hooks.log; exit 1; }
+  done
+  cp "$SRC/firefox/policies.json" /usr/lib/firefox-esr/distribution/policies.json
+fi
+if [ -f "$SRC/firefox/distribution.ini" ]; then
+  cp "$SRC/firefox/distribution.ini" /usr/lib/firefox-esr/distribution/distribution.ini
+fi
+chmod 644 /usr/lib/firefox-esr/distribution/policies.json /usr/lib/firefox-esr/distribution/distribution.ini 2>/dev/null || true
+# Extensoes locais (se houver .xpi no projeto; senao uBlock vem via policies)
+mkdir -p /usr/share/panthera-firefox
+cp "$SRC/firefox/extensions/"*.xpi /usr/share/panthera-firefox/ 2>/dev/null || echo "[0300-firefox] uBlock via policies.json (sem .xpi local)" | tee -a /var/log/panthera-hooks.log
+# Atalho Boas-vindas (abre apos login no Live)
+mkdir -p /usr/share/applications
+cat > /usr/share/applications/panthera-welcome.desktop <<EOF
+[Desktop Entry]
+Name=Bem-vindo Panthera
+Comment=Guia inicial Panthera
+Exec=firefox about:panthera-welcome
+Icon=firefox-esr
+Type=Application
+Categories=Utility;
+EOF
+echo "[0300-firefox] OK" | tee -a /var/log/panthera-hooks.log

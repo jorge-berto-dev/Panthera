@@ -1,0 +1,23 @@
+componentName: panthera
+welcomeStyleCalamares: true
+strings:
+  productName: Panthera OS v1
+  shortProductName: Panthera
+  version: v1 Uso Geral
+  shortVersion: v1
+  versionedName: Panthera v1 Uso Geral
+  shortVersionedName: Panthera v1
+  bootloaderEntryName: Panthera
+  productUrl: https://panthera.local
+  supportUrl: ajuda local
+  knownIssuesUrl: ajuda local
+  releaseNotesUrl: ajuda local
+style:
+  sidebarBackground: "#0B111C"
+  sidebarText: "#F3F6F9"
+  sidebarTextSelect: "#1D83FF"
+  sidebarTextHighlight: "#3A9BFF"
+images:
+  productLogo: logo.png
+  productIcon: logo.png
+  productWelcome: welcome.png

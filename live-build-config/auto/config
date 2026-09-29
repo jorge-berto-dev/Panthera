@@ -1,0 +1,15 @@
+#!/bin/sh
+# live-build-config/auto/config - base bookworm (ver ODT Seção 15.2)
+lb config \
+ --distribution bookworm \
+ --archive-areas "main contrib non-free non-free-firmware" \
+ --debian-installer live \
+ --debian-installer-distribution bookworm \
+ --bootloaders "grub-efi" \
+ --binary-images iso-hybrid \
+ --iso-application "Panthera OS v1" \
+ --iso-volume "PANTHERA_V1" \
+ --bootappend-live "boot=live components quiet splash loglevel=2 locales=pt_BR.UTF-8 keyboard-layouts=br timezone=America/Sao_Paulo" \
+ --mirror-bootstrap http://deb.debian.org/debian \
+ --mirror-chroot http://deb.debian.org/debian \
+ --mirror-binary http://deb.debian.org/debian

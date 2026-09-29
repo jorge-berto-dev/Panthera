@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080">
+  <!-- Panthera wallpaper oficial FASE 3 - paleta real Figura 1 ODT Secao 4.1 -->
+  <!-- Fundo gradiente #0B111C -> #141B2B -->
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0B111C"/>
+      <stop offset="1" stop-color="#141B2B"/>
+    </linearGradient>
+    <linearGradient id="arc" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#1D83FF" stop-opacity="0.1"/>
+      <stop offset="0.5" stop-color="#1D83FF"/>
+      <stop offset="1" stop-color="#29BFFF"/>
+    </linearGradient>
+  </defs>
+  <rect width="1920" height="1080" fill="url(#bg)"/>
+  <!-- Silhueta pantera perfil direita (SVG limpo original, sem artefato) -->
+  <g transform="translate(960,430)" opacity="0.98">
+    <!-- arco duplo azul eletrico esquerda -->
+    <path d="M -210 40 A 150 150 0 0 1 -210 -140" fill="none" stroke="#1D83FF" stroke-width="10" stroke-linecap="round" opacity="0.95"/>
+    <path d="M -178 30 A 118 118 0 0 1 -178 -110" fill="none" stroke="#1D83FF" stroke-width="4" stroke-linecap="round" opacity="0.55"/>
+    <!-- cabeca pantera grafite -->
+    <path d="M -60 -120 L 30 -120 L 70 -95 L 120 -80 L 150 -30 L 140 40 L 90 90 L 20 105 L -50 95 L -95 55 L -110 -10 L -100 -70 Z" fill="#0B111C" stroke="#1D83FF" stroke-width="3" stroke-linejoin="round"/>
+    <!-- focinho / orelha -->
+    <path d="M -60 -120 L -30 -85 L -75 -75 Z" fill="#141B2B" stroke="#1D83FF" stroke-width="2" stroke-linejoin="round"/>
+    <path d="M 120 -80 L 150 -30 L 110 -25 Z" fill="#141B2B"/>
+    <!-- olho ciano #29BFFF (so detalhe pequeno) -->
+    <ellipse cx="45" cy="-30" rx="16" ry="10" fill="#29BFFF"/>
+    <circle cx="48" cy="-30" r="5" fill="#0B111C"/>
+    <!-- bigode / linhas forca -->
+    <path d="M 60 30 L 130 25" stroke="#1D83FF" stroke-width="2" opacity="0.5" stroke-linecap="round"/>
+    <path d="M 55 45 L 125 50" stroke="#1D83FF" stroke-width="2" opacity="0.3" stroke-linecap="round"/>
+  </g>
+  <!-- Texto PANTHERA branco gelo, A sem travessao -->
+  <text x="960" y="700" font-family="Montserrat,Inter,sans-serif" font-size="84" font-weight="800" letter-spacing="12" fill="#F3F6F9" text-anchor="middle">PANTHERA</text>
+  <text x="960" y="745" font-family="Inter,sans-serif" font-size="22" letter-spacing="8" fill="#8490A4" text-anchor="middle">LIBERDADE PARA O SEU MUNDO</text>
+  <!-- faixa INSTALAR (referencia, nao clicavel no papel) -->
+  <rect x="860" y="800" width="200" height="56" rx="10" fill="#1D83FF"/>
+  <text x="960" y="836" font-family="Inter,sans-serif" font-size="20" font-weight="bold" fill="#FFFFFF" text-anchor="middle">INSTALAR</text>
+</svg>

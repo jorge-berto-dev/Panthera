@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=Central Panthera
+Comment=Wi-Fi, tema, som, impressora, seguranca em 1 lugar
+Exec=/usr/bin/panthera-central
+Icon=preferences-system
+Terminal=false
+Type=Application
+Categories=Settings;System;
+Keywords=wifi;tema;impressora;firewall;som;

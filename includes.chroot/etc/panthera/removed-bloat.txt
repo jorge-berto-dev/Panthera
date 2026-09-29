@@ -1,0 +1,21 @@
+# /etc/panthera/removed-bloat.txt - prova RNF002 (ODT Secao 22 item 9)
+# Pacotes purgados pelo hook 0400 ou nunca instalados na base Secao 3.2.
+# Audite no Live/instalado: dpkg -l | grep -i -E "snapd|apport|whoopsie|popularity|tracker|zeitgeist|evolution|thunderbird" || echo LIMPO-OK
+snapd # 300MB + loop mounts + telemetria. PROIBIDO.
+apport # relatorio crash espionagem.
+whoopsie # relatorio crash espionagem.
+popularity-contest # vota em pacotes, espionagem.
+ubuntu-report # telemetria instalacao.
+tracker # indexacao come HD velho.
+tracker-miner-fs # idem.
+zeitgeist # log atividade.
+evolution # email desktop 200MB, vai via Loja.
+evolution-data-server # idem, PROIBIDO em idle.
+thunderbird # email desktop, vai via Loja.
+gnome-games # duplica Parole/Celluloid.
+rhythmbox # duplica Parole.
+totem # duplica Celluloid.
+gnome-software-plugin-snap # puxa snapd. PROIBIDO.
+openssh-server # porta 22 aberta por padrao, vai via Loja dev.
+brltty # acessibilidade avancada via Loja (mantem onboard/orca via Loja).
+speech-dispatcher # idem.

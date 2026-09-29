@@ -1,0 +1,6 @@
+Panthera v1 privacy-manifest 2026-09-29
+Removido: snapd apport whoopsie popularity-contest ubuntu-report tracker zeitgeist evolution thunderbird
+Desligado: localizacao relatorios login-online ssh-server
+Firewall: deny incoming allow outgoing, DoH Quad9 no Firefox
+Audite: dpkg -l | grep -E snapd|apport; ss -tulpn; about:telemetry
+Suporte: Central Privacidade botao Prova

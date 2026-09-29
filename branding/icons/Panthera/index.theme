@@ -1,0 +1,19 @@
+[Icon Theme]
+Name=Panthera
+Comment=Pantera azul sobre escuro, outline 1.5px #1D83FF (ODT Secao 4.1)
+Inherits=Papirus,breeze,hicolor
+Directories=apps,places,mimetypes
+
+[apps]
+Size=48
+Type=Fixed
+
+[places]
+Size=48
+Type=Fixed
+
+[mimetypes]
+Size=48
+Type=Fixed
+# Retinta Papirus: acento #1D83FF, fundo #0B111C, texto #F3F6F9.
+# Teste: gtk-update-icon-cache /usr/share/icons/Panthera; confira Loja/Arquivos azuis.
