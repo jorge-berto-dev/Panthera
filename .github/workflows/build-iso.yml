@@ -60,7 +60,9 @@ jobs:
           ISO=$(ls out/*.iso | head -1)
           echo "ISO: $ISO"
           sudo apt-get update && sudo apt-get install -y squashfs-tools
-          ./tests/test-iso-conteudo.sh "$ISO"
+          # grava o resultado em arquivo: o relatorio de falha le este arquivo,
+          # senao eu via so o log do build e nao a checagem que reprovou
+          ./tests/test-iso-conteudo.sh "$ISO" | tee ci-out/conteudo.log
 
       - name: Conferir ISO e fatiar para download
         run: |
@@ -120,7 +122,13 @@ jobs:
             grep -nE "FALHA|E: |lb build: |exit non-zero|not (found|available)" ci-out/docker-build.log 2>/dev/null | tail -25
             echo '```'
             echo
-            echo "## Fim do log"
+            echo "## Checagem de conteudo da ISO (se houver)"
+            echo
+            echo '```'
+            grep -E "^\[FALHA\]" ci-out/conteudo.log 2>/dev/null || echo "(nao rodou, ou a ISO passou)"
+            echo '```'
+            echo
+            echo "## Fim do log do build"
             echo
             echo '```'
             tail -30 ci-out/docker-build.log 2>/dev/null
@@ -140,6 +148,7 @@ jobs:
           path: |
             ci-out/docker-build.log
             ci-out/iso-build.log
+            ci-out/conteudo.log
             out/build.log
             out/final-*.log
             ci-out/matriz.txt
