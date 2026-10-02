@@ -54,23 +54,53 @@ if ! apt-get download $QUER >> /var/log/panthera-pool.log 2>&1; then
   exit 1
 fi
 
-# ---- passo 3: confere que o pool sozinho resolve, sem depender da rede
-# A guarda vive em scripts/panthera-pool-check.sh e tem suite propria
-# (tests/test-pool-check.sh), porque a versao anterior desta logica reprovou o
-# build com o pool completo na mao: tratava a lista "Inst" do apt como falha,
-# sendo que "Inst" sao os pacotes que o apt instalaria.
+# ---- passo 3: resolve em laco ate o pool instalar sozinho, sem rede
+# Confere, baixa o que o apt ainda quer, confere de novo.
+# Declarar as dependencias na mao e fragil: na v1.1.1 faltou libevent-2.1-7 e
+# debianutils, e na v1.1.3 o apt ainda pediu rede com os 3 do pool na mao sem
+# dizer o que. Deixar o proprio apt dizer o que falta, e deixar o apt resolver,
+# e o que faz a promessa do catalogo ser verdadeira.
+#
+# A saida da guarda vai para a TELA de proposito. Nas v1.1.3 e v1.1.5 o
+# diagnostico foi so para o log do chroot, que morre junto com o build, e eu
+# fiquei sem saber qual pacote faltava.
+#
+# SEM "| tee" dentro do if: o status de um pipeline e o do ultimo comando, e o
+# tee sempre da sucesso. Foi assim que a v1.1.3 publicou uma ISO com a promessa
+# quebrada mesmo depois de a guarda reprovar.
 if [ ! -x /usr/share/panthera-src/panthera-pool-check.sh ]; then
   echo "[0250-pool] FALHA: guarda /usr/share/panthera-src/panthera-pool-check.sh ausente" | tee -a /var/log/panthera-hooks.log
   exit 1
 fi
-# SEM "| tee" aqui de proposito. O status de um pipeline e o do ultimo comando, e
-# o tee sempre da sucesso: a v1.1.3 reprovou na guarda, o pipe engoleu a falha e
-# a ISO foi publicada prometendo instalacao offline que nao existia. A guarda
-# escreve no log por conta propria.
-if bash /usr/share/panthera-src/panthera-pool-check.sh "$POOL" >> /var/log/panthera-hooks.log 2>&1; then
-  echo "[0250-pool] guarda: pool instalavel sem rede" | tee -a /var/log/panthera-hooks.log
-else
-  echo "[0250-pool] FALHA: pool nao instala sozinho, sem internet" | tee -a /var/log/panthera-hooks.log
+
+TENTATIVA=0
+OK=0
+while [ "$TENTATIVA" -lt 4 ]; do
+  TENTATIVA=$((TENTATIVA + 1))
+  SAIDA=$(bash /usr/share/panthera-src/panthera-pool-check.sh "$POOL" 2>&1) && RC=0 || RC=$?
+  if [ "$RC" -eq 0 ]; then
+    echo "[0250-pool] guarda OK na tentativa $TENTATIVA" | tee -a /var/log/panthera-hooks.log
+    OK=1
+    break
+  fi
+  echo "[0250-pool] guarda reprovou na tentativa $TENTATIVA:" | tee -a /var/log/panthera-hooks.log
+  printf '%s\n' "$SAIDA" | sed 's/^/[0250-pool]   /' | tee -a /var/log/panthera-hooks.log
+
+  FALTANDO=$(bash /usr/share/panthera-src/panthera-pool-check.sh --lista "$POOL" 2>/dev/null | grep '^http' || true)
+  if [ -z "$FALTANDO" ]; then
+    echo "[0250-pool] FALHA: pool nao resolve e a guarda nao disse o que buscar" | tee -a /var/log/panthera-hooks.log
+    exit 1
+  fi
+  while read -r url; do
+    [ -z "$url" ] && continue
+    nome=$(basename "$url")
+    echo "[0250-pool]   baixando $nome" | tee -a /var/log/panthera-hooks.log
+    wget -q -O "$POOL/$nome" "$url" || echo "[0250-pool]   FALHA ao baixar $nome" | tee -a /var/log/panthera-hooks.log
+  done <<< "$FALTANDO"
+done
+
+if [ "$OK" -ne 1 ]; then
+  echo "[0250-pool] FALHA: pool nao instala sozinho, sem internet, mesmo apos 4 tentativas" | tee -a /var/log/panthera-hooks.log
   exit 1
 fi
 

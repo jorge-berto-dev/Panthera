@@ -117,6 +117,36 @@ mkdir -p "$T/vazio"
 if bash "$GUARDA" "$T/vazio" >/dev/null 2>&1; then bad "pool vazio passou"; else ok "pool vazio reprova"; fi
 
 echo ""
+echo "== modo --lista: imprime as URLs e nada mais =="
+printf '%s\n' "$INST_OK" > "$T/inst"
+printf "'http://deb.debian.org/debian/pool/main/a/avahi/libavahi-common3_0.8-10_amd64.deb' libavahi-common3_0.8-10_amd64.deb 21504 SHA256:abc\n" > "$T/uris"
+: > "$T/nodl"
+SAIDA=$(APTX_INST="$T/inst" APTX_URIS="$T/uris" APTX_NODL="$T/nodl" PATH="$STUB:$PATH" \
+        bash "$GUARDA" --lista "$POOL" 2>/dev/null)
+if [ "$SAIDA" = "http://deb.debian.org/debian/pool/main/a/avahi/libavahi-common3_0.8-10_amd64.deb" ]; then
+  ok "--lista imprime so a URL, sem aspas e sem ruido"
+else
+  bad "--lista imprimiu errado: [$SAIDA]"
+fi
+if APTX_INST="$T/inst" APTX_URIS="$T/nodl" APTX_NODL="$T/nodl" PATH="$STUB:$PATH" \
+   bash "$GUARDA" --lista "$POOL" 2>/dev/null | grep -q .; then
+  bad "--lista imprimiu algo quando nao falta nada"
+else
+  ok "--lista sai vazio quando o pool esta completo"
+fi
+
+echo ""
+echo "== o hook se auto-completa: baixa o que falta e tenta de novo =="
+# Se o hook so reprovar, cada dependencia esquecida custa um ciclo de build.
+# Ele tem que baixar o que a guarda --lista aponta e reconferir.
+grep -q -- "--lista" "$HOOK" \
+  && ok "o hook usa o modo --lista para baixar o que falta" \
+  || bad "o hook nao baixa o que falta: depende de eu adivinhar a dependencia"
+grep -q "wget -q -O" "$HOOK" \
+  && ok "o hook baixa a URL que a guarda apontou" \
+  || bad "o hook nao baixa nada"
+
+echo ""
 echo "== o hook usa a guarda E escuta a saida dela =="
 grep -q "panthera-pool-check.sh" "$HOOK" \
   && ok "0250-pool chama a guarda testada" \

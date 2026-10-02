@@ -1,6 +1,8 @@
 #!/bin/bash
-# /usr/share/panthera-src/panthera-pool-check.sh <pool_dir>
+# /usr/share/panthera-src/panthera-pool-check.sh [--lista] <pool_dir>
 # Confere se o pool de .deb instala sozinho, sem rede.
+# Com --lista, imprime so as URLs que o apt ainda buscaria e sai 0 sempre:
+# e o modo que o 0250-pool usa para Baixar o que falta e tentar de novo.
 #
 # Isolado num script proprio (e nao dentro do hook) por dois motivos concretos:
 #  - a v1.1.2 reprovou o build com o pool COMPLETO na mao, porque a checagem
@@ -17,6 +19,8 @@
 #
 # Sai 0 se o pool resolve. Sai 1 e diz o que falta caso contrario.
 set -u
+LISTA=0
+if [ "${1:-}" = "--lista" ]; then LISTA=1; shift; fi
 POOL="${1:-/var/cache/panthera-pool}"
 
 [ -d "$POOL" ] || { echo "pool inexistente: $POOL" >&2; exit 1; }
@@ -30,6 +34,15 @@ fi
 
 # (a) o que o apt ainda buscaria pela rede: se houver algo, o pool nao basta
 QUER_BUSCAR=$(apt-get install -s --print-uris "${DEBS[@]}" 2>/dev/null | grep "^'" || true)
+
+# Modo --lista: so as URLs, para o hook baixar e repetir.
+if [ "$LISTA" -eq 1 ]; then
+  [ -n "$QUER_BUSCAR" ] || exit 0
+  echo "$QUER_BUSCAR" | while read -r l; do
+    echo "$l" | awk '{gsub(/\x27/, ""); print $1}'
+  done
+  exit 0
+fi
 
 # (b) todo pacote que o apt instalaria tem de estar no pool
 FALTA=""

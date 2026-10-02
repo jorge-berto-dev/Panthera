@@ -13,6 +13,14 @@
 [OK] pool inexistente reprova
 [OK] pool vazio reprova
 
+== modo --lista: imprime as URLs e nada mais ==
+[OK] --lista imprime so a URL, sem aspas e sem ruido
+[OK] --lista sai vazio quando o pool esta completo
+
+== o hook se auto-completa: baixa o que falta e tenta de novo ==
+[OK] o hook usa o modo --lista para baixar o que falta
+[OK] o hook baixa a URL que a guarda apontou
+
 == o hook usa a guarda E escuta a saida dela ==
 [OK] 0250-pool chama a guarda testada
 [OK] o hook nao engole a falha da guarda com pipe para tee
