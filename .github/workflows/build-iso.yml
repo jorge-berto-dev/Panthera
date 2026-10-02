@@ -63,6 +63,14 @@ jobs:
           echo "---- ultimas 60 linhas ----"
           tail -60 ci-out/docker-build.log 2>/dev/null || echo "(log vazio)"
 
+      - name: Conferir o CONTEUDO da ISO (nao publicar ISO quebrada)
+        run: |
+          set -euo pipefail
+          ISO=$(ls out/*.iso | head -1)
+          echo "ISO: $ISO"
+          sudo apt-get update && sudo apt-get install -y squashfs-tools
+          ./tests/test-iso-conteudo.sh "$ISO"
+
       - name: Conferir ISO e fatiar para download
         run: |
           set -euo pipefail
@@ -73,6 +81,7 @@ jobs:
           rm -f ci-out/*.iso.part-*
           split -b 1000M -d -a 2 "$ISO" ci-out/panthera-iso.part-
           cp "$ISO.sha256" ci-out/
+          ( cd ci-out && sed -E "s| .*/| |" *.iso.sha256 > tmp && mv tmp *.iso.sha256 )
           cp out/matriz.txt out/provas.txt ci-out/ 2>/dev/null || true
           ls -lh ci-out/
 

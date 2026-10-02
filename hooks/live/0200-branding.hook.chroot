@@ -1,28 +1,29 @@
 #!/bin/bash
 # hooks/live/0200-branding.hook.chroot - tema Panthera FASE 3 (ODT Secao 15.3 + 20.3 + 25.1)
-# Roda DENTRO do chroot. Usa /tmp/panthera-src (via includes) com fallback host.
+# Roda DENTRO do chroot. Usa /usr/share/panthera-src (via includes) com fallback host.
 # Instala: GTK, icones, wallpaper, GRUB, Plymouth, greeter, skel.
 set -e
 mkdir -p /var/log/panthera
 echo "[0200-branding] $(date -u +%Y-%m-%dT%H:%M:%SZ) inicio" | tee -a /var/log/panthera-hooks.log
 # Descobre onde estao as fontes (chroot vs host)
-SRC="/tmp/panthera-src"
+SRC="/usr/share/panthera-src"
 if [ ! -d "$SRC/branding" ] && [ -d branding ]; then SRC="."; fi
 B="$SRC/branding"
 
+# Fonte faltando REPROVA o build. Na v1.1-kits isto era so um AVISO: as fontes
+# nao chegaram no chroot, o gtk.css nao foi copiado, e a ISO foi publicada com
+# o tema do Debian 12 e o log saying "OK branding". Promessa nao cumprida com
+# build verde e o pior resultado possivel.
+[ -d "$B" ] || { echo "[0200-branding] FALHA: sem fontes em $B. Sem elas a ISO sai sem tema." | tee -a /var/log/panthera-hooks.log; exit 1; }
+[ -f "$B/themes/Panthera/gtk.css" ] || { echo "[0200-branding] FALHA: falta gtk.css em $B" | tee -a /var/log/panthera-hooks.log; exit 1; }
+[ -f "$B/themes/Panthera/index.theme" ] || { echo "[0200-branding] FALHA: falta index.theme em $B (GTK3 ignora o tema)" | tee -a /var/log/panthera-hooks.log; exit 1; }
+[ -f "$B/wallpaper.svg" ] || { echo "[0200-branding] FALHA: falta wallpaper.svg em $B" | tee -a /var/log/panthera-hooks.log; exit 1; }
+
 # 1. Tema GTK Panthera (paleta oficial Secao 4.1)
 mkdir -p /usr/share/themes/Panthera/gtk-3.0 /usr/share/themes/Panthera
-if [ -f "$B/themes/Panthera/index.theme" ]; then
-  cp "$B/themes/Panthera/index.theme" /usr/share/themes/Panthera/index.theme
-else
-  echo "[0200-branding] AVISO: index.theme ausente em $B (GTK3 ignora o tema)" | tee -a /var/log/panthera-hooks.log
-fi
-if [ -f "$B/themes/Panthera/gtk.css" ]; then
-  cp "$B/themes/Panthera/gtk.css" /usr/share/themes/Panthera/gtk-3.0/gtk.css
-  cp "$B/themes/Panthera/gtk.css" /usr/share/themes/Panthera/gtk.css
-else
-  echo "[0200-branding] AVISO: gtk.css ausente em $B" | tee -a /var/log/panthera-hooks.log
-fi
+cp "$B/themes/Panthera/index.theme" /usr/share/themes/Panthera/index.theme
+cp "$B/themes/Panthera/gtk.css" /usr/share/themes/Panthera/gtk-3.0/gtk.css
+cp "$B/themes/Panthera/gtk.css" /usr/share/themes/Panthera/gtk.css
 # Reprova o build se o CSS nao compilar no GTK3. GTK3 nao suporta var() (isso e
 # GTK4): um unico var() invalido faz o GTK descartar o gtk.css inteiro e a ISO
 # silenciosamente sai com o tema do Debian 12. Mesma politica do 0300 com o JSON.
@@ -50,11 +51,7 @@ fi
 
 # 3. Wallpaper oficial 1920x1080
 mkdir -p /usr/share/backgrounds/panthera
-if [ -f "$B/wallpaper.svg" ]; then
-  cp "$B/wallpaper.svg" /usr/share/backgrounds/panthera/wallpaper.svg
-else
-  echo "[0200-branding] AVISO: wallpaper.svg ausente" | tee -a /var/log/panthera-hooks.log
-fi
+cp "$B/wallpaper.svg" /usr/share/backgrounds/panthera/wallpaper.svg
 
 # 4. GRUB 1024x768 (fundo #0B111C, selecao #1D83FF)
 mkdir -p /boot/grub/themes/panthera
@@ -186,8 +183,13 @@ shadow_opacity=0
 EOF
 }
 
+# O caminho que realmente importa e o /etc/skel: verificado na v1.1-kits que
+# /home vem VAZIO no squashfs, porque o live-boot cria o usuario do Live no
+# primeiro boot com "useradd -m", e o useradd copia o skel. Assim o mesmo
+# branding vale para o Live e para qualquer usuario instalado pelo Calamares.
 aplicar_home /etc/skel
-# live-build cria o usuario do Live ANTES dos hooks, entao /etc/skel nunca chega nele.
+# O laco abaixo e uma garantia extra: se alguma vez o usuario do Live for criado
+# no build em vez do boot, o branding e aplicado nele tambem.
 for LIVE_USER in user panthera; do
   if [ -d "/home/$LIVE_USER" ]; then
     aplicar_home "/home/$LIVE_USER"

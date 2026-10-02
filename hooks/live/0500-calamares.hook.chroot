@@ -4,7 +4,7 @@
 set -e
 mkdir -p /var/log/panthera
 echo "[0500-calamares] $(date -u +%Y-%m-%dT%H:%M:%SZ) inicio" | tee -a /var/log/panthera-hooks.log
-SRC="/tmp/panthera-src"
+SRC="/usr/share/panthera-src"
 if [ ! -d "$SRC/calamares" ] && [ -d calamares ]; then SRC="."; fi
 C="$SRC/calamares"
 

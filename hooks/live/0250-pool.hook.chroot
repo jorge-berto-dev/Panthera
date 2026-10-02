@@ -6,16 +6,22 @@
 # Sem o pool, um usuario sem internet que installa a Panthera fica com um
 # desktop SEM NENHUM navegador e sem como obter um. O pool garante que o
 # navegador volta a funcionar com a ISO na mao e o cabo de rede desconectado.
+#
+# O pool nao baixa so os pacotes de pool_offline. Ele usa
+# --download-only apontando o cache para o pool, o que traz junto TODA
+# dependencia que ainda nao esta na base. Na v1.1-kits o pool tinha so os 2
+# .deb e faltava libevent-2.1-7 e debianutils: a instalacao offline falhava com
+# "E: Unable to fetch". Declarar as dependencias na mao e fragile; deixar o apt
+# resolver e o que faz a promessa do catalogo ser verdadeira.
 set -e
 mkdir -p /var/log/panthera
 echo "[0250-pool] $(date -u +%Y-%m-%dT%H:%M:%SZ) inicio" | tee -a /var/log/panthera-hooks.log
 CAT=/usr/share/panthera-store/catalogo.json
 POOL=/var/cache/panthera-pool
-mkdir -p "$POOL"
 
 if [ ! -f "$CAT" ]; then
-  echo "[0250-pool] AVISO: sem catalogo em $CAT, pool nao montado" | tee -a /var/log/panthera-hooks.log
-  exit 0
+  echo "[0250-pool] FALHA: sem catalogo em $CAT. Sem catalogo nao ha pool, e sem pool a ISO nao tem navegador offline." | tee -a /var/log/panthera-hooks.log
+  exit 1
 fi
 
 # pool_offline vive no catalogo: uma fonte de verdade so.
@@ -26,30 +32,31 @@ print(' '.join(cat.get('pool_offline', [])))
 " 2>/dev/null || true)
 
 if [ -z "$PKGS" ]; then
-  echo "[0250-pool] pool_offline vazio no catalogo" | tee -a /var/log/panthera-hooks.log
-  exit 0
-fi
-
-echo "[0250-pool] baixando: $PKGS" | tee -a /var/log/panthera-hooks.log
-cd "$POOL"
-# shellcheck disable=SC2086
-if ! apt-get download $PKGS 2>>/var/log/panthera-pool.log; then
-  echo "[0250-pool] FALHA ao baixar o pool, ve /var/log/panthera-pool.log" | tee -a /var/log/panthera-hooks.log
+  echo "[0250-pool] FALHA: pool_offline vazio no catalogo" | tee -a /var/log/panthera-hooks.log
   exit 1
 fi
 
-# Verificacao honesta: o pool sozinho tem de resolver o navegador SEM internet,
-# nenhuma dependencia buscada na rede. Se faltar algo, diz qual faltou em vez de
-# deixar o usuario descobrir na hora de instalar.
-echo "[0250-pool] conferindo se o pool cobre tudo sem internet..." | tee -a /var/log/panthera-hooks.log
+mkdir -p "$POOL/partial"
+chmod 777 "$POOL" "$POOL/partial"
+echo "[0250-pool] baixando (com dependencias): $PKGS" | tee -a /var/log/panthera-hooks.log
+# shellcheck disable=SC2086
+if ! apt-get install -y --download-only -o Dir::Cache::archives="$POOL" $PKGS >> /var/log/panthera-pool.log 2>&1; then
+  echo "[0250-pool] FALHA ao montar o pool, ve /var/log/panthera-pool.log" | tee -a /var/log/panthera-hooks.log
+  exit 1
+fi
+rm -f "$POOL/partial"/* 2>/dev/null || true
+
+# Verificacao dura: o pool tem de resolver o navegador SEM NADA de rede. Nao e
+# aviso: uma ISO que promete "instalavel sem internet" e falha seria mentira
+# do catalogo, e o build tem de reprovar.
 SIM=$(apt-get install -s --no-download "$POOL"/*.deb 2>&1 || true)
 if echo "$SIM" | grep -qE "^(E:|Unable to (acquire|fetch)|Err:)"; then
-  echo "[0250-pool] AVISO: o pool NAO cobre tudo offline. Dependencia faltando:" | tee -a /var/log/panthera-hooks.log
+  echo "[0250-pool] FALHA: o pool NAO cobre a instalacao offline" | tee -a /var/log/panthera-hooks.log
   echo "$SIM" | grep -E "^(E:|Unable to|Err:)" | sed 's/^/[0250-pool]   /' | tee -a /var/log/panthera-hooks.log
-else
-  echo "[0250-pool] OK: pool instala offline sem buscar nada na rede" | tee -a /var/log/panthera-hooks.log
+  exit 1
 fi
 
-TAM=$(du -sh "$POOL" | cut -f1)
 N=$(ls -1 "$POOL"/*.deb 2>/dev/null | wc -l)
-echo "[0250-pool] OK $N .deb, $TAM total, em $POOL" | tee -a /var/log/panthera-hooks.log
+TAM=$(du -sh "$POOL" | cut -f1)
+echo "[0250-pool] OK $N .deb, $TAM, instala offline sem buscar nada na rede" | tee -a /var/log/panthera-hooks.log
+ls -1 "$POOL"/*.deb | sed 's|.*/|[0250-pool]   |' | tee -a /var/log/panthera-hooks.log

@@ -27,7 +27,7 @@ fi
 # Listas apt do Live (inuteis no Live;pos-install faz apt update)
 rm -rf /var/lib/apt/lists/* 2>/dev/null || true
 rm -rf /var/cache/apt/* /var/cache/debconf/*-old 2>/dev/null || true
-rm -rf /tmp/panthera-src 2>/dev/null || true
+# /usr/share/panthera-src nao existe mais: as fontes do build vao para /usr/share/panthera-src.
 rm -rf /tmp/* /var/tmp/* 2>/dev/null || true
 mkdir -p /var/log/panthera
 DEPOIS=$(du -sm / 2>/dev/null | cut -f1)

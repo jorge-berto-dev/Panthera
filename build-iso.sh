@@ -82,14 +82,20 @@ cp hooks/live/*.hook.chroot config/hooks/live/
 chmod +x config/hooks/live/*.hook.chroot
 # FASE 2: entrega includes (sysctl, sudoers, manifest, skel)
 cp -a includes.chroot/. config/includes.chroot/
-# FASE 2: disponibiliza fontes dos hooks dentro do chroot em /tmp/panthera-src
+# FASE 2: disponibiliza fontes dos hooks dentro do chroot em /usr/share/panthera-src
 # (hook .chroot roda DENTRO do chroot e nao enxerga a pasta do projeto no host)
-mkdir -p config/includes.chroot/tmp/panthera-src
-cp -a branding config/includes.chroot/tmp/panthera-src/ 2>/dev/null || true
-cp -a calamares config/includes.chroot/tmp/panthera-src/ 2>/dev/null || true
-cp -a firefox config/includes.chroot/tmp/panthera-src/ 2>/dev/null || true
-cp -a scripts/check-wayland.sh config/includes.chroot/tmp/panthera-src/ 2>/dev/null || true
-cp -a scripts/panthera-doctor.sh config/includes.chroot/tmp/panthera-src/ 2>/dev/null || true
+#
+# ATENCAO: NAO use config/includes.chroot/tmp/ aqui. Verificado na ISO v1.1-kits:
+# o live-build NAO entrega includes.chroot/tmp no chroot. As fontes chegavam
+# vazias, o hook 0200 nao achava o gtk.css e a ISO saia com o tema do Debian 12
+# sem nenhum aviso que parasse o build. Tudo sob /usr/share chega, como o
+# catalogo e o modulo em /usr/lib provaram.
+mkdir -p config/includes.chroot/usr/share/panthera-src
+cp -a branding config/includes.chroot/usr/share/panthera-src/ 2>/dev/null || true
+cp -a calamares config/includes.chroot/usr/share/panthera-src/ 2>/dev/null || true
+cp -a firefox config/includes.chroot/usr/share/panthera-src/ 2>/dev/null || true
+cp -a scripts/check-wayland.sh config/includes.chroot/usr/share/panthera-src/ 2>/dev/null || true
+cp -a scripts/panthera-doctor.sh config/includes.chroot/usr/share/panthera-src/ 2>/dev/null || true
 # FASE 6: apps em /usr/bin com nomes do ODT (fonte unica: scripts/)
 mkdir -p config/includes.chroot/usr/bin
 cp scripts/panthera-central.py config/includes.chroot/usr/bin/panthera-central

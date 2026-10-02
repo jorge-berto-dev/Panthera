@@ -1,0 +1,15 @@
+== 1. estatico: os hooks reprovam quando falta fonte ==
+[OK] 0200-branding tem 5 bloqueios de FALHA
+[OK] 0300-firefox tem 5 bloqueios de FALHA
+== 2. estatico: as fontes NAO vao em includes.chroot/tmp ==
+[OK] fontes entregues em includes.chroot/usr/share
+[OK] nenhum hook le fontes de /tmp
+== 3. estatico: o pool baixa as dependencias, nao so os .deb nomeados ==
+[OK] 0250-pool usa --download-only (traz as dependencias junto)
+[OK] pool incompleto reprova o build, e so avisa nao
+== 4. estatico: as mensagens de sucesso sao honestas ==
+[OK] 0300 confere que as policies chegaram antes de dizer OK
+
+[AVISO] sem caminho de ISO: pulei as checagens de conteudo.
+        Use: ./tests/test-iso-conteudo.sh ~/Downloads/panthera-iso/*.iso   apos baixar a ISO.
+CONTEUDO PASS (estatico). Falta conferir a ISO de verdade.

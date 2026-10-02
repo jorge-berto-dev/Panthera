@@ -5,7 +5,7 @@
 set -e
 mkdir -p /var/log/panthera
 echo "[0400-hardening] $(date -u +%Y-%m-%dT%H:%M:%SZ) inicio" | tee -a /var/log/panthera-hooks.log
-SRC="/tmp/panthera-src"
+SRC="/usr/share/panthera-src"
 if [ ! -d "$SRC" ] && [ -d includes.chroot ]; then SRC="."; fi
 INC="$SRC/includes.chroot/etc"
 # Sysctl Panthera (Secao 3.4). Ja vem via includes; copia de reserva via SRC.

@@ -12,24 +12,27 @@
 set -e
 mkdir -p /var/log/panthera
 echo "[0300-firefox] $(date -u +%Y-%m-%dT%H:%M:%SZ) inicio" | tee -a /var/log/panthera-hooks.log
-SRC="/tmp/panthera-src"
+SRC="/usr/share/panthera-src"
 if [ ! -d "$SRC/firefox" ] && [ -d firefox ]; then SRC="."; fi
+# Mesma regra do 0200: fonte faltando reprova. Antes disto o hook pulava a
+# copia e ainda imprimia "OK policies", e o Firefox ficava sem nenhuma protecao.
+[ -f "$SRC/firefox/policies.json" ] || { echo "[0300-firefox] FALHA: sem policies.json em $SRC" | tee -a /var/log/panthera-hooks.log; exit 1; }
+[ -f "$SRC/firefox/distribution.ini" ] || { echo "[0300-firefox] FALHA: sem distribution.ini em $SRC" | tee -a /var/log/panthera-hooks.log; exit 1; }
 mkdir -p /usr/share/panthera-firefox
 # Policies OBRIGATORIAS (Secao 8: telemetria off, DoH Quad9, uBlock)
 # Reprova o build se o JSON for invalido ou faltar chave (R7 DoD FASE 5)
-if [ -f "$SRC/firefox/policies.json" ]; then
-  python3 -m json.tool "$SRC/firefox/policies.json" >/dev/null
-  for chave in DisableTelemetry DisableFirefoxStudies DisablePocket DNSOverHTTPS ExtensionSettings; do
-    grep -q "$chave" "$SRC/firefox/policies.json" || { echo "[0300-firefox] FALHA: sem $chave em policies.json" | tee -a /var/log/panthera-hooks.log; exit 1; }
-  done
-  # about:panthera-welcome NAO existe no Firefox: ja apontava para uma pagina
-  # inexistente e a homepage abria "nao encontramos esse site" em toda aba nova.
-  grep -q "about:panthera-welcome" "$SRC/firefox/policies.json" && { echo "[0300-firefox] FALHA: policies aponta para about:panthera-welcome, pagina que nao existe" | tee -a /var/log/panthera-hooks.log; exit 1; }
-  cp "$SRC/firefox/policies.json" /usr/share/panthera-firefox/policies.json
+python3 -m json.tool "$SRC/firefox/policies.json" >/dev/null
+for chave in DisableTelemetry DisableFirefoxStudies DisablePocket DNSOverHTTPS ExtensionSettings; do
+  grep -q "$chave" "$SRC/firefox/policies.json" || { echo "[0300-firefox] FALHA: sem $chave em policies.json" | tee -a /var/log/panthera-hooks.log; exit 1; }
+done
+# about:panthera-welcome NAO existe no Firefox: ja apontava para uma pagina
+# inexistente e a homepage abria "nao encontramos esse site" em toda aba nova.
+if grep -q "about:panthera-welcome" "$SRC/firefox/policies.json"; then
+  echo "[0300-firefox] FALHA: policies aponta para about:panthera-welcome, pagina que nao existe" | tee -a /var/log/panthera-hooks.log
+  exit 1
 fi
-if [ -f "$SRC/firefox/distribution.ini" ]; then
-  cp "$SRC/firefox/distribution.ini" /usr/share/panthera-firefox/distribution.ini
-fi
+cp "$SRC/firefox/policies.json" /usr/share/panthera-firefox/policies.json
+cp "$SRC/firefox/distribution.ini" /usr/share/panthera-firefox/distribution.ini
 chmod 644 /usr/share/panthera-firefox/policies.json /usr/share/panthera-firefox/distribution.ini 2>/dev/null || true
 # Extensoes locais (se houver .xpi no projeto; senao uBlock vem via policies)
 mkdir -p /usr/share/panthera-firefox/extensions
@@ -55,4 +58,5 @@ Icon=firefox-esr
 Type=Application
 Categories=Utility;
 EOF
-echo "[0300-firefox] OK policies em /usr/share/panthera-firefox + hook do apt" | tee -a /var/log/panthera-hooks.log
+[ -f /usr/share/panthera-firefox/policies.json ] || { echo "[0300-firefox] FALHA: policies nao chegaram em /usr/share/panthera-firefox" | tee -a /var/log/panthera-hooks.log; exit 1; }
+echo "[0300-firefox] OK policies + distribution.ini em /usr/share/panthera-firefox + hook do apt" | tee -a /var/log/panthera-hooks.log

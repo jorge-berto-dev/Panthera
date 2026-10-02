@@ -33,6 +33,7 @@ run iso ./tests/test-iso.sh
 run hardening ./tests/test-hardening.sh
 run apps ./tests/test-apps.sh
 run kits ./tests/test-kits.sh
+run conteudo ./tests/test-iso-conteudo.sh
 
 echo "== artefatos FASE 7 =="
 for f in guias/GUIA-VENTOY.md guias/GUIA-INSTALACAO.md includes.chroot/usr/share/panthera-ajuda/index.html; do
