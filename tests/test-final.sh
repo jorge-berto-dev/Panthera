@@ -33,6 +33,7 @@ run iso ./tests/test-iso.sh
 run hardening ./tests/test-hardening.sh
 run apps ./tests/test-apps.sh
 run kits ./tests/test-kits.sh
+run poolcheck ./tests/test-pool-check.sh
 run conteudo ./tests/test-iso-conteudo.sh
 
 echo "== artefatos FASE 7 =="

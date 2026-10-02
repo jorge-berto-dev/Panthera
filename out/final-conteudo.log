@@ -6,7 +6,8 @@
 [OK] nenhum hook le fontes de /tmp
 == 3. estatico: o pool resolve as dependencias e reprova se faltar ==
 [OK] 0250-pool baixa a lista exata que o apt pediu
-[OK] pool incompleto reprova o build e nomeia o pacote
+[OK] pool usa a guarda testada em tests/test-pool-check.sh
+[OK] a guarda e entregue no chroot
 == 3b. estatico: existe renderizador de SVG para o wallpaper ==
 [OK] librsvg2-bin na base (converte o wallpaper.svg)
 [OK] sem wallpaper.png reprova o build

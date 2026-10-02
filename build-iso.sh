@@ -96,6 +96,8 @@ cp -a calamares config/includes.chroot/usr/share/panthera-src/ 2>/dev/null || tr
 cp -a firefox config/includes.chroot/usr/share/panthera-src/ 2>/dev/null || true
 cp -a scripts/check-wayland.sh config/includes.chroot/usr/share/panthera-src/ 2>/dev/null || true
 cp -a scripts/panthera-doctor.sh config/includes.chroot/usr/share/panthera-src/ 2>/dev/null || true
+cp -a scripts/panthera-pool-check.sh config/includes.chroot/usr/share/panthera-src/ 2>/dev/null || true
+chmod +x config/includes.chroot/usr/share/panthera-src/panthera-pool-check.sh 2>/dev/null || true
 # FASE 6: apps em /usr/bin com nomes do ODT (fonte unica: scripts/)
 mkdir -p config/includes.chroot/usr/bin
 cp scripts/panthera-central.py config/includes.chroot/usr/bin/panthera-central

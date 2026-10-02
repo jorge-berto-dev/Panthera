@@ -43,11 +43,14 @@ echo "== 3. estatico: o pool resolve as dependencias e reprova se faltar =="
 grep -q "apt-get download" hooks/live/0250-pool.hook.chroot \
   && ok "0250-pool baixa a lista exata que o apt pediu" \
   || bad "0250-pool nao baixa a lista de dependencias"
-if grep -q "ainda falta para instalar sem internet" hooks/live/0250-pool.hook.chroot; then
-  ok "pool incompleto reprova o build e nomeia o pacote"
+if grep -q "panthera-pool-check.sh" hooks/live/0250-pool.hook.chroot; then
+  ok "pool usa a guarda testada em tests/test-pool-check.sh"
 else
-  bad "pool incompleto so avisa: a ISO pode prometer offline e nao entregar"
+  bad "0250-pool tem logica de checagem propria, sem suite"
 fi
+grep -q "panthera-pool-check.sh" build-iso.sh \
+  && ok "a guarda e entregue no chroot" \
+  || bad "a guarda nao e entregue no chroot: o 0250 vai reprovar sempre"
 
 echo "== 3b. estatico: existe renderizador de SVG para o wallpaper =="
 # Sem rsvg-convert o XFCE e o slick-greeter ficam sem papel de parede, porque

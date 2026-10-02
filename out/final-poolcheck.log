@@ -1,0 +1,17 @@
+== a guarda nao pode reprovar quando o pool esta completo ==
+[OK] pool completo, apt lista os 3 do pool => OK
+
+== mas tem que reprovar quando falta dependencia de verdade ==
+[OK] dependencia fora do pool => FALHA nomeando
+[OK] Inst de pacote ausente, sem E: => FALHA
+
+== e quando o apt so reclama de rede ==
+[OK] apt pedindo para buscar na rede => FALHA
+
+== caso de borda ==
+[OK] pool vazio reprova
+[OK] pool inexistente reprova
+
+== o hook 0250 usa a guarda, e nao uma logica propria ==
+[OK] 0250-pool chama a guarda testada
+POOL-CHECK PASS: a guarda aceita o pool completo e reprova o incompleto.

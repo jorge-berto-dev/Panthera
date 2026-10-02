@@ -54,11 +54,17 @@ if ! apt-get download $QUER >> /var/log/panthera-pool.log 2>&1; then
   exit 1
 fi
 
-# ---- passo 3: confere que o pool sozinho resolve, e diz QUAL falta se nao
-FALTA=$(apt-get install -s "$POOL"/*.deb 2>/dev/null | awk '/^Inst /{print $2}' | sort -u)
-if [ -n "$FALTA" ]; then
-  echo "[0250-pool] FALHA: ainda falta para instalar sem internet:" | tee -a /var/log/panthera-hooks.log
-  echo "$FALTA" | sed 's/^/[0250-pool]   /' | tee -a /var/log/panthera-hooks.log
+# ---- passo 3: confere que o pool sozinho resolve, sem depender da rede
+# A guarda vive em scripts/panthera-pool-check.sh e tem suite propria
+# (tests/test-pool-check.sh), porque a versao anterior desta logica reprovou o
+# build com o pool completo na mao: tratava a lista "Inst" do apt como falha,
+# sendo que "Inst" sao os pacotes que o apt instalaria.
+if [ ! -x /usr/share/panthera-src/panthera-pool-check.sh ]; then
+  echo "[0250-pool] FALHA: guarda /usr/share/panthera-src/panthera-pool-check.sh ausente" | tee -a /var/log/panthera-hooks.log
+  exit 1
+fi
+if ! bash /usr/share/panthera-src/panthera-pool-check.sh "$POOL" 2>&1 | tee -a /var/log/panthera-hooks.log; then
+  echo "[0250-pool] FALHA: pool nao instala sozinho, sem internet" | tee -a /var/log/panthera-hooks.log
   exit 1
 fi
 

@@ -1,4 +1,4 @@
-Panthera v1 - matriz de release FASE 7 - 2026-10-02T18:26:35Z
+Panthera v1 - matriz de release FASE 7 - 2026-10-02T19:16:38Z
 Autoridade: Panthera_OS_Prompt_Mestre.odt Secao 12
 
 PASS estatico check
@@ -6,6 +6,7 @@ PASS estatico iso
 PASS estatico hardening
 PASS estatico apps
 PASS estatico kits
+PASS estatico poolcheck
 PASS estatico conteudo
 PASS guias/GUIA-VENTOY.md
 PASS guias/GUIA-INSTALACAO.md
