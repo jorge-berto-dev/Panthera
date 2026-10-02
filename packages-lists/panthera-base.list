@@ -73,4 +73,7 @@ calamares
 fonts-inter
 fonts-noto-core
 hunspell-pt-br
+# rsvg-convert: o hook 0200 precisa converter o wallpaper.svg em PNG. O XFCE e o
+# slick-greeter nao aceitam SVG, e sem isso a ISO sai sem papel de parede.
+librsvg2-bin
 xdg-utils

@@ -1,12 +1,15 @@
 == 1. estatico: os hooks reprovam quando falta fonte ==
-[OK] 0200-branding tem 5 bloqueios de FALHA
+[OK] 0200-branding tem 6 bloqueios de FALHA
 [OK] 0300-firefox tem 5 bloqueios de FALHA
 == 2. estatico: as fontes NAO vao em includes.chroot/tmp ==
 [OK] fontes entregues em includes.chroot/usr/share
 [OK] nenhum hook le fontes de /tmp
-== 3. estatico: o pool baixa as dependencias, nao so os .deb nomeados ==
-[OK] 0250-pool usa --download-only (traz as dependencias junto)
-[OK] pool incompleto reprova o build, e so avisa nao
+== 3. estatico: o pool resolve as dependencias e reprova se faltar ==
+[OK] 0250-pool baixa a lista exata que o apt pediu
+[OK] pool incompleto reprova o build e nomeia o pacote
+== 3b. estatico: existe renderizador de SVG para o wallpaper ==
+[OK] librsvg2-bin na base (converte o wallpaper.svg)
+[OK] sem wallpaper.png reprova o build
 == 4. estatico: as mensagens de sucesso sao honestas ==
 [OK] 0300 confere que as policies chegaram antes de dizer OK
 

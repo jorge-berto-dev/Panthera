@@ -116,16 +116,18 @@ WALL_SVG=/usr/share/backgrounds/panthera/wallpaper.svg
 WALL_PNG=/usr/share/backgrounds/panthera/wallpaper.png
 if [ ! -f "$WALL_PNG" ]; then
   if command -v rsvg-convert >/dev/null 2>&1 && [ -f "$WALL_SVG" ]; then
-    rsvg-convert -w 1920 -h 1080 "$WALL_SVG" -o "$WALL_PNG" 2>/dev/null || true
+    rsvg-convert -w 1920 -h 1080 "$WALL_SVG" -o "$WALL_PNG" || true
   elif command -v convert >/dev/null 2>&1 && [ -f "$WALL_SVG" ]; then
-    convert "$WALL_SVG" -resize 1920x1080! "$WALL_PNG" 2>/dev/null || true
+    convert "$WALL_SVG" -resize 1920x1080! "$WALL_PNG" || true
   fi
 fi
-if [ ! -f "$WALL_PNG" ]; then
-  echo "[0200-branding] AVISO: sem rsvg-convert/convert, sem wallpaper.png (XFCE nao usa SVG)" | tee -a /var/log/panthera-hooks.log
-else
-  mkdir -p /usr/share/backgrounds/xfce
-  cat > /usr/share/backgrounds/xfce/panthera.xml <<EOF
+# Nem o XFCE nem o slick-greeter aceitam SVG. Sem PNG nao ha papel de parede,
+# e a v1.1.1 saiu assim com um AVISO. Agora reprova: librsvg2-bin esta na base
+# justamente para este passo existir.
+[ -f "$WALL_PNG" ] || { echo "[0200-branding] FALHA: sem wallpaper.png (XFCE nao usa SVG). rsvg-convert ou convert nao funcionou." | tee -a /var/log/panthera-hooks.log; exit 1; }
+
+mkdir -p /usr/share/backgrounds/xfce
+cat > /usr/share/backgrounds/xfce/panthera.xml <<EOF
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE wallpapers SYSTEM "xfce-wallpaper.dtd">
 <wallpapers>
@@ -139,7 +141,6 @@ else
   </wallpaper>
 </wallpapers>
 EOF
-fi
 
 aplicar_home() {
   H="$1"

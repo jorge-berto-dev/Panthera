@@ -36,17 +36,28 @@ else
   ok "nenhum hook le fontes de /tmp"
 fi
 
-echo "== 3. estatico: o pool baixa as dependencias, nao so os .deb nomeados =="
-if grep -q "download-only" hooks/live/0250-pool.hook.chroot; then
-  ok "0250-pool usa --download-only (traz as dependencias junto)"
-else
-  bad "0250-pool baixa so os .deb nomeados: a instalacao offline falha nas dependencias"
-fi
-if grep -q "FALHA: o pool NAO cobre" hooks/live/0250-pool.hook.chroot; then
-  ok "pool incompleto reprova o build, e so avisa nao"
+echo "== 3. estatico: o pool resolve as dependencias e reprova se faltar =="
+# O metodo e simular -> baixar a lista exata -> simular de novo exigindo zero
+# pendencia. Depender de --download-only nao funcionou na v1.1.1: a checagem
+# acusava "Unable to fetch" sem dizer qual pacote faltava.
+grep -q "apt-get download" hooks/live/0250-pool.hook.chroot \
+  && ok "0250-pool baixa a lista exata que o apt pediu" \
+  || bad "0250-pool nao baixa a lista de dependencias"
+if grep -q "ainda falta para instalar sem internet" hooks/live/0250-pool.hook.chroot; then
+  ok "pool incompleto reprova o build e nomeia o pacote"
 else
   bad "pool incompleto so avisa: a ISO pode prometer offline e nao entregar"
 fi
+
+echo "== 3b. estatico: existe renderizador de SVG para o wallpaper =="
+# Sem rsvg-convert o XFCE e o slick-greeter ficam sem papel de parede, porque
+# nenhum dos dois aceita SVG. A v1.1.1 caiu aqui sem ninguem ver.
+grep -q "^librsvg2-bin$" packages-lists/panthera-base.list \
+  && ok "librsvg2-bin na base (converte o wallpaper.svg)" \
+  || bad "librsvg2-bin ausente da base: a ISO sai sem papel de parede"
+grep -q "FALHA: sem wallpaper.png" hooks/live/0200-branding.hook.chroot \
+  && ok "sem wallpaper.png reprova o build" \
+  || bad "0200 so avisa quando nao gera o wallpaper.png"
 
 echo "== 4. estatico: as mensagens de sucesso sao honestas =="
 # O 0300 imprimia "OK policies" mesmo tendo pulado a copia inteira.
