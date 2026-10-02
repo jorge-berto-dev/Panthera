@@ -17,6 +17,12 @@
 # buscaria pela rede. Vazio significa que o pool basta. Quando nao esta vazio,
 # o nome do arquivo na URL diz exatamente qual pacote falta.
 #
+# NAO use "apt-get install -s --no-download" para isto. Em quatro versoes ele
+# respondeu "E: Unable to fetch some archives" com o pool COMPLETO na mao: o
+# --no-download manda o apt recusar qualquer fetch, e o apt reporta isso como
+# erro mesmo quando nao ha nada para buscar. Era falso positivo meu custando um
+# ciclo de build por vez (v1.1.1, v1.1.3, v1.1.5, v1.1.6).
+#
 # Sai 0 se o pool resolve. Sai 1 e diz o que falta caso contrario.
 set -u
 LISTA=0
@@ -32,8 +38,14 @@ if [ "${#DEBS[@]}" -eq 0 ]; then
   exit 1
 fi
 
-# (a) o que o apt ainda buscaria pela rede: se houver algo, o pool nao basta
-QUER_BUSCAR=$(apt-get install -s --print-uris "${DEBS[@]}" 2>/dev/null | grep "^'" || true)
+# (a) o que o apt ainda buscaria pela rede: se houver algo, o pool nao basta.
+# Captura o stderr tambem, para distinguir "nao falta nada" de "o apt falhou".
+SAIDA_PRINT=$(apt-get install -s --print-uris "${DEBS[@]}" 2>&1) || {
+  echo "o apt-get --print-uris falhou; nao da para confiar na verificacao:" >&2
+  printf '%s\n' "$SAIDA_PRINT" | sed 's/^/  apt: /' >&2
+  exit 1
+}
+QUER_BUSCAR=$(printf '%s\n' "$SAIDA_PRINT" | grep "^'" || true)
 
 # Modo --lista: so as URLs, para o hook baixar e repetir.
 if [ "$LISTA" -eq 1 ]; then
@@ -44,17 +56,15 @@ if [ "$LISTA" -eq 1 ]; then
   exit 0
 fi
 
-# (b) todo pacote que o apt instalaria tem de estar no pool
+# (b) rede de seguranca: todo pacote que o apt instalaria tem de estar no pool.
+# O ":amd64" e removido porque o apt pode imprimir o nome qualificado por
+# arquitetura, e o .deb no disco nao tem esse sufixo.
 FALTA=""
-for p in $(apt-get install -s "${DEBS[@]}" 2>/dev/null | awk '/^Inst /{print $2}' | sort -u); do
+for p in $(printf '%s\n' "$SAIDA_PRINT" | awk '/^Inst /{print $2}' | sed 's/:[a-z0-9]*$//' | sort -u); do
   ls "$POOL/$p"_*.deb >/dev/null 2>&1 || FALTA="$FALTA $p"
 done
 
-# (c) o apt nao pode reclamar de erro de fetch
-ERROS=$(apt-get install -s --no-download "${DEBS[@]}" 2>&1 \
-        | grep -E "^(E:|Unable to (fetch|acquire)|Err:)" || true)
-
-if [ -n "$QUER_BUSCAR" ] || [ -n "$FALTA" ] || [ -n "$ERROS" ]; then
+if [ -n "$QUER_BUSCAR" ] || [ -n "$FALTA" ]; then
   echo "o pool NAO instala sozinho, sem internet" >&2
   if [ -n "$QUER_BUSCAR" ]; then
     echo "  o apt ainda buscaria estes pacotes na rede:" >&2
@@ -65,7 +75,6 @@ if [ -n "$QUER_BUSCAR" ] || [ -n "$FALTA" ] || [ -n "$ERROS" ]; then
     done
   fi
   [ -n "$FALTA" ] && echo "$FALTA" | tr ' ' '\n' | sed 's/^/  fora do pool: /' >&2
-  [ -n "$ERROS" ] && echo "$ERROS" | sed 's/^/  apt: /' >&2
   exit 1
 fi
 exit 0

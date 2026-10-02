@@ -4,7 +4,8 @@
 == mas tem que REPROVAR quando o apt ainda buscaria algo ==
 [OK] apt ainda buscaria libavahi-common3 => FALHA nomeando
 [OK] Inst de pacote ausente, sem URL => FALHA
-[OK] apt reclamando de fetch => FALHA
+[OK] apt diz 'Unable to fetch' mas --print-uris nao lista nada => OK
+[OK] apt falhando no --print-uris reprova
 
 == o diagnostico precisa NOMEAR o pacote que falta ==
 [OK] a saida nomeia o .deb que o apt ainda buscaria

@@ -9,6 +9,10 @@
 #  - o hook chamava a guarda com "| tee", e o status do pipeline e o do tee, que
 #    sempre da sucesso: a falha foi engolida e a ISO saiu prometendo offline
 #    (v1.1.3)
+#  - a guarda usava "apt-get install -s --no-download" como sinal de falha, e o
+#    --no-download manda o apt recusar qualquer fetch: ele respondeu "E: Unable
+#    to fetch" com o pool COMPLETO. Quatro builds queimados nisso (v1.1.1,
+#    v1.1.3, v1.1.5, v1.1.6)
 # A guarda e testada contra saidas controladas do apt, sem build e sem rede.
 # Os cenarios nao sao inventados: cada um ja aconteceu.
 set -e
@@ -26,14 +30,14 @@ trap 'rm -rf "$T"' EXIT
 STUB="$T/bin"
 mkdir -p "$STUB"
 
-# apt de mentira: responde conforme a flag, porque a guarda usa tres modos
-# (-s, --print-uris e --no-download) e cada um precisa de uma resposta.
+# apt de mentira. Com --print-uris o apt real imprime a simulacao NORMAL (com as
+# linhas Inst) MAIS as linhas de URL. O stub precisa fazer igual, senao o teste
+# mente sobre o que a guarda enxerga.
 cat > "$STUB/apt-get" <<'STUB'
 #!/bin/bash
 for a in "$@"; do
   case "$a" in
-    --print-uris) cat "$APTX_URIS"; exit 0 ;;
-    --no-download) cat "$APTX_NODL"; exit 0 ;;
+    --print-uris) cat "$APTX_INST"; cat "$APTX_URIS"; exit ${APTX_URIS_RC:-0} ;;
   esac
 done
 cat "$APTX_INST"
@@ -49,11 +53,10 @@ touch "$POOL/firefox-esr_1_amd64.deb" \
       "$POOL/libevent-2.1-7_1_amd64.deb"
 
 caso() {
-  local nome="$1" inst="$2" uris="$3" nodl="$4" esperado="$5"
+  local nome="$1" inst="$2" uris="$3" esperado="$4"
   printf '%s\n' "$inst" > "$T/inst"
   printf '%s\n' "$uris" > "$T/uris"
-  printf '%s\n' "$nodl"  > "$T/nodl"
-  if APTX_INST="$T/inst" APTX_URIS="$T/uris" APTX_NODL="$T/nodl" \
+  if APTX_INST="$T/inst" APTX_URIS="$T/uris" \
      PATH="$STUB:$PATH" bash "$GUARDA" "$POOL" > "$T/saida" 2>&1; then
     r=0
   else
@@ -77,7 +80,7 @@ echo "== o pool completo tem que PASSAR =="
 # --print-uris NAO deve listar nada para buscar. Se aparecer uma URL aqui, o
 # pool esta incompleto.
 caso "pool completo: Inst lista os 3 e nada a buscar => OK" \
-  "$INST_OK" "" "" 0
+  "$INST_OK" "" 0
 
 echo ""
 echo "== mas tem que REPROVAR quando o apt ainda buscaria algo =="
@@ -87,23 +90,37 @@ echo "== mas tem que REPROVAR quando o apt ainda buscaria algo =="
 caso "apt ainda buscaria libavahi-common3 => FALHA nomeando" \
   "$INST_OK
 Inst libavahi-common3 (Debian:12.6/stable)" \
-  "'http://deb.debian.org/debian/pool/main/a/avahi/libavahi-common3_0.8-10_amd64.deb' libavahi-common3_0.8-10_amd64.deb 21504 SHA256:abc" \
-  "" 1
+  "'http://deb.debian.org/debian/pool/main/a/avahi/libavahi-common3_0.8-10_amd64.deb' libavahi-common3_0.8-10_amd64.deb 21504 SHA256:abc" 1
 
 caso "Inst de pacote ausente, sem URL => FALHA" \
   "$INST_OK
-Inst libavahi-common3 (Debian:12.6/stable)" "" "" 1
+Inst libavahi-common3 (Debian:12.6/stable)" "" 1
 
-caso "apt reclamando de fetch => FALHA" \
-  "$INST_OK" "" \
-  "E: Unable to fetch some archives, maybe run apt-get update or try with --fix-missing?" 1
+# Regressao do falso positivo que custou 4 builds: o apt responder
+# "E: Unable to fetch" NAO e motivo de reprovar. Quem autoritativo e o
+# --print-uris: se ele nao lista nada, o pool basta. Este cenario e o
+# exatamente da v1.1.6.
+caso "apt diz 'Unable to fetch' mas --print-uris nao lista nada => OK" \
+  "$INST_OK
+E: Unable to fetch some archives, maybe run apt-get update or try with --fix-missing?" "" 0
+
+# ... mas se o proprio apt falhar no --print-uris, a guarda tem de reprovar,
+# porque ai nao da para confiar na verificacao.
+printf '%s\n' "$INST_OK" > "$T/inst"
+: > "$T/uris"
+if APTX_INST="$T/inst" APTX_URIS="$T/uris" APTX_URIS_RC=1 PATH="$STUB:$PATH" \
+   bash "$GUARDA" "$POOL" >/dev/null 2>&1; then
+  bad "apt falhando no --print-uris passou: verificacao sem confianca"
+else
+  ok "apt falhando no --print-uris reprova"
+fi
 
 echo ""
 echo "== o diagnostico precisa NOMEAR o pacote que falta =="
 printf '%s\n' "$INST_OK" > "$T/inst"
 printf "'http://deb.debian.org/debian/pool/main/a/avahi/libavahi-common3_0.8-10_amd64.deb' libavahi-common3_0.8-10_amd64.deb 21504 SHA256:abc\n" > "$T/uris"
 : > "$T/nodl"
-if APTX_INST="$T/inst" APTX_URIS="$T/uris" APTX_NODL="$T/nodl" PATH="$STUB:$PATH" \
+if APTX_INST="$T/inst" APTX_URIS="$T/uris" PATH="$STUB:$PATH" \
    bash "$GUARDA" "$POOL" 2>&1 | grep -q "libavahi-common3_0.8-10_amd64.deb"; then
   ok "a saida nomeia o .deb que o apt ainda buscaria"
 else
@@ -121,14 +138,14 @@ echo "== modo --lista: imprime as URLs e nada mais =="
 printf '%s\n' "$INST_OK" > "$T/inst"
 printf "'http://deb.debian.org/debian/pool/main/a/avahi/libavahi-common3_0.8-10_amd64.deb' libavahi-common3_0.8-10_amd64.deb 21504 SHA256:abc\n" > "$T/uris"
 : > "$T/nodl"
-SAIDA=$(APTX_INST="$T/inst" APTX_URIS="$T/uris" APTX_NODL="$T/nodl" PATH="$STUB:$PATH" \
+SAIDA=$(APTX_INST="$T/inst" APTX_URIS="$T/uris" PATH="$STUB:$PATH" \
         bash "$GUARDA" --lista "$POOL" 2>/dev/null)
 if [ "$SAIDA" = "http://deb.debian.org/debian/pool/main/a/avahi/libavahi-common3_0.8-10_amd64.deb" ]; then
   ok "--lista imprime so a URL, sem aspas e sem ruido"
 else
   bad "--lista imprimiu errado: [$SAIDA]"
 fi
-if APTX_INST="$T/inst" APTX_URIS="$T/nodl" APTX_NODL="$T/nodl" PATH="$STUB:$PATH" \
+if APTX_INST="$T/inst" APTX_URIS="$T/nodl" PATH="$STUB:$PATH" \
    bash "$GUARDA" --lista "$POOL" 2>/dev/null | grep -q .; then
   bad "--lista imprimiu algo quando nao falta nada"
 else
