@@ -8,6 +8,7 @@ on:
 
 permissions:
   contents: write
+  issues: write
 
 concurrency:
   group: panthera-iso
@@ -57,11 +58,41 @@ jobs:
         if: failure()
         run: |
           echo "############### ERRO REAL (leia aqui) ###############"
-          grep -nE "E: |error:|Error |lb build: |debootstrap:|No space left|not (found|available)|Error 2" ci-out/docker-build.log 2>/dev/null | tail -30 || echo "(nenhuma linha de erro reconhecida)"
+          grep -nE "E: |error:|Error |lb build: |debootstrap:|No space left|not (found|available)|Error 2|FALHA" ci-out/docker-build.log 2>/dev/null | tail -30 || echo "(nenhuma linha de erro reconhecida)"
           echo "#######################################################"
           echo ""
           echo "---- ultimas 60 linhas ----"
           tail -60 ci-out/docker-build.log 2>/dev/null || echo "(log vazio)"
+
+      # Publica o erro como issue. A API de actions/logs exige token, mas a de
+      # issues nao exige nada em repo publico. Assim o erro fica legivel sem
+      # depender de ninguem copiar e cola de log.
+      - name: Publicar o erro como issue
+        if: failure()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set +e
+          {
+            echo "Build falhou na tag \`${{ github.ref_name }}\`."
+            echo
+            echo "Log completo: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+            echo
+            echo "## Erro"
+            echo
+            echo '```'
+            grep -nE "FALHA|E: |lb build: |exit non-zero|not (found|available)" ci-out/docker-build.log 2>/dev/null | tail -25
+            echo '```'
+            echo
+            echo "## Fim do log"
+            echo
+            echo '```'
+            tail -30 ci-out/docker-build.log 2>/dev/null
+            echo '```'
+          } > /tmp/erro.md
+          gh issue create --title "Build falhou: ${{ github.ref_name }} (${{ github.run_number }})" \
+            --body-file /tmp/erro.md
+          echo "issue criada"
 
       - name: Conferir o CONTEUDO da ISO (nao publicar ISO quebrada)
         run: |
