@@ -59,7 +59,10 @@ jobs:
           set -euo pipefail
           ISO=$(ls out/*.iso | head -1)
           echo "ISO: $ISO"
-          sudo apt-get update && sudo apt-get install -y squashfs-tools
+          # squashfs-tools para o unsquashfs, xorriso para extrair o
+          # filesystem.squashfs da ISO. Sem o xorriso a checagem nem roda.
+          sudo apt-get update && sudo apt-get install -y squashfs-tools xorriso
+          command -v xorriso unsquashfs
           # grava o resultado em arquivo: o relatorio de falha le este arquivo,
           # senao eu via so o log do build e nao a checagem que reprovou
           ./tests/test-iso-conteudo.sh "$ISO" | tee ci-out/conteudo.log
