@@ -114,12 +114,34 @@ tem "usr/share/panthera-firefox/policies.json" \
   || bad "policies.json AUSENTE: Firefox sem protecao"
 tem "usr/share/panthera-firefox/distribution.ini" \
   && ok "distribution.ini entregue" || bad "distribution.ini ausente"
-tem "etc/apt/apt.hooks.d/90panthera-firefox" \
-  && ok "hook do apt que entrega as policies" \
-  || bad "hook do apt ausente: Firefox instalado na mao ficaria sem policies"
 tem "var/cache/panthera-pool/firefox-esr_" \
   && ok "pool offline com o Firefox dentro da ISO" \
   || bad "pool offline sem Firefox: quem nao tem internet fica sem navegador"
+# A v1.1.1 saiu com um AVISO de "sem wallpaper.png" e ninguem conferiu. O XFCE e
+# o slick-greeter nao aceitam SVG, entao sem PNG nao ha papel de parede.
+tem "usr/share/backgrounds/panthera/wallpaper.png" \
+  && ok "wallpaper.png gerado (XFCE nao usa SVG)" \
+  || bad "wallpaper.png AUSENTE: a ISO sai sem papel de parede"
+tem "usr/share/backgrounds/panthera/wallpaper.svg" \
+  && ok "wallpaper.svg original presente" || bad "wallpaper.svg ausente"
+tem "usr/share/backgrounds/xfce/panthera.xml" \
+  && ok "papel de parede registrado no menu do XFCE" \
+  || bad "panthera.xml ausente: o papel de parede nao aparece para escolher"
+# O pool precisa bring the dependencies: na v1.1.1 faltava libevent-2.1-7 e a
+# instalacao offline falhava.
+tem "var/cache/panthera-pool/libevent-2.1-7_" \
+  && ok "dependencia do Firefox no pool" \
+  || bad "libevent-2.1-7 fora do pool: instalar sem internet falha"
+NDEB=$(grep -c "var/cache/panthera-pool/.*\.deb" "$T/lista.txt")
+[ "$NDEB" -ge 3 ] && ok "pool com $NDEB .deb" || bad "pool com so $NDEB .deb: provavel dependencia faltando"
+tem "usr/share/panthera-src/panthera-pool-check.sh" \
+  && ok "guarda do pool entregue no chroot" \
+  || bad "guarda do pool ausente no chroot"
+tem "usr/bin/panthera-firefox-policies" \
+  && ok "script de policies entregue" || bad "script de policies ausente"
+tem "etc/apt/apt.hooks.d/90panthera-firefox" \
+  && ok "hook do apt que entrega as policies" \
+  || bad "hook do apt ausente: Firefox instalado na mao ficaria sem policies"
 tem "etc/skel/.config/gtk-3.0/settings.ini" \
   && ok "tema aplicado no skel (usuario instalado)" || bad "skel sem tema"
 tem "etc/skel/.config/xfce4/xfconf/xfce-perchannel-desktop/xfce4-desktop.xml" \

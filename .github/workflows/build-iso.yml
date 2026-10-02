@@ -54,6 +54,42 @@ jobs:
               ./FAZER-ISO-VM.sh
             ' 2>&1 | tee ci-out/docker-build.log
 
+      - name: Conferir o CONTEUDO da ISO (nao publicar ISO quebrada)
+        run: |
+          set -euo pipefail
+          ISO=$(ls out/*.iso | head -1)
+          echo "ISO: $ISO"
+          sudo apt-get update && sudo apt-get install -y squashfs-tools
+          ./tests/test-iso-conteudo.sh "$ISO"
+
+      - name: Conferir ISO e fatiar para download
+        run: |
+          set -euo pipefail
+          ls -lh out/
+          ISO=$(ls out/*.iso | head -1)
+          sha256sum -c "$ISO.sha256"
+          du -m "$ISO" | awk "{if (\$1 > 2252) { print \"ISO pesada: \" \$1 \"MB\"; exit 1 } else print \"peso OK: \" \$1 \"MB\"}"
+          rm -f ci-out/*.iso.part-*
+          split -b 1000M -d -a 2 "$ISO" ci-out/panthera-iso.part-
+          cp "$ISO.sha256" ci-out/
+          ( cd ci-out && sed -E "s| .*/| |" *.iso.sha256 > tmp && mv tmp *.iso.sha256 )
+          cp out/matriz.txt out/provas.txt ci-out/ 2>/dev/null || true
+          ls -lh ci-out/
+
+      - name: Publicar ISO no Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          TAG="${GITHUB_REF_NAME}"
+          [ "$TAG" = "main" ] && TAG="build-$(date -u +%Y%m%d-%H%M%S)"
+          gh release create "$TAG" ci-out/panthera-iso.part-* ci-out/*.sha256 ci-out/matriz.txt ci-out/provas.txt \
+            --title "Panthera v1 ISO ($TAG)" \
+            --notes "ISO live Panthera v1, gerada com live-build em Debian 12 bookworm. Boot UEFI e Legacy (isohybrid). Junte os pedacos (cat panthera-iso.part-* > panthera.iso) e confira o sha256 antes de gravar. Detalhes em guias/GUIA-VENTOY.md." \
+            --latest
+          echo "Release: $TAG"
+          gh release view "$TAG" --json url --jq .url
+
       - name: Resumo do erro real
         if: failure()
         run: |
@@ -93,42 +129,6 @@ jobs:
           gh issue create --title "Build falhou: ${{ github.ref_name }} (${{ github.run_number }})" \
             --body-file /tmp/erro.md
           echo "issue criada"
-
-      - name: Conferir o CONTEUDO da ISO (nao publicar ISO quebrada)
-        run: |
-          set -euo pipefail
-          ISO=$(ls out/*.iso | head -1)
-          echo "ISO: $ISO"
-          sudo apt-get update && sudo apt-get install -y squashfs-tools
-          ./tests/test-iso-conteudo.sh "$ISO"
-
-      - name: Conferir ISO e fatiar para download
-        run: |
-          set -euo pipefail
-          ls -lh out/
-          ISO=$(ls out/*.iso | head -1)
-          sha256sum -c "$ISO.sha256"
-          du -m "$ISO" | awk "{if (\$1 > 2252) { print \"ISO pesada: \" \$1 \"MB\"; exit 1 } else print \"peso OK: \" \$1 \"MB\"}"
-          rm -f ci-out/*.iso.part-*
-          split -b 1000M -d -a 2 "$ISO" ci-out/panthera-iso.part-
-          cp "$ISO.sha256" ci-out/
-          ( cd ci-out && sed -E "s| .*/| |" *.iso.sha256 > tmp && mv tmp *.iso.sha256 )
-          cp out/matriz.txt out/provas.txt ci-out/ 2>/dev/null || true
-          ls -lh ci-out/
-
-      - name: Publicar ISO no Release
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          set -euo pipefail
-          TAG="${GITHUB_REF_NAME}"
-          [ "$TAG" = "main" ] && TAG="build-$(date -u +%Y%m%d-%H%M%S)"
-          gh release create "$TAG" ci-out/panthera-iso.part-* ci-out/*.sha256 ci-out/matriz.txt ci-out/provas.txt \
-            --title "Panthera v1 ISO ($TAG)" \
-            --notes "ISO live Panthera v1, gerada com live-build em Debian 12 bookworm. Boot UEFI e Legacy (isohybrid). Junte os pedacos (cat panthera-iso.part-* > panthera.iso) e confira o sha256 antes de gravar. Detalhes em guias/GUIA-VENTOY.md." \
-            --latest
-          echo "Release: $TAG"
-          gh release view "$TAG" --json url --jq .url
 
       - name: Log e matrizes como artefato
         if: always()
