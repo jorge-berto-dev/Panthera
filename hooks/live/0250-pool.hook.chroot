@@ -1,0 +1,55 @@
+#!/bin/bash
+# hooks/live/0250-pool.hook.chroot - pool offline de .deb dentro da propria ISO
+# Roda DENTRO do chroot. Idempotente.
+#
+# Por que isso e obrigatorio, e nao opcional: o Firefox saiu da base nativa.
+# Sem o pool, um usuario sem internet que installa a Panthera fica com um
+# desktop SEM NENHUM navegador e sem como obter um. O pool garante que o
+# navegador volta a funcionar com a ISO na mao e o cabo de rede desconectado.
+set -e
+mkdir -p /var/log/panthera
+echo "[0250-pool] $(date -u +%Y-%m-%dT%H:%M:%SZ) inicio" | tee -a /var/log/panthera-hooks.log
+CAT=/usr/share/panthera-store/catalogo.json
+POOL=/var/cache/panthera-pool
+mkdir -p "$POOL"
+
+if [ ! -f "$CAT" ]; then
+  echo "[0250-pool] AVISO: sem catalogo em $CAT, pool nao montado" | tee -a /var/log/panthera-hooks.log
+  exit 0
+fi
+
+# pool_offline vive no catalogo: uma fonte de verdade so.
+PKGS=$(python3 -c "
+import json
+cat = json.load(open('$CAT'))
+print(' '.join(cat.get('pool_offline', [])))
+" 2>/dev/null || true)
+
+if [ -z "$PKGS" ]; then
+  echo "[0250-pool] pool_offline vazio no catalogo" | tee -a /var/log/panthera-hooks.log
+  exit 0
+fi
+
+echo "[0250-pool] baixando: $PKGS" | tee -a /var/log/panthera-hooks.log
+cd "$POOL"
+# shellcheck disable=SC2086
+if ! apt-get download $PKGS 2>>/var/log/panthera-pool.log; then
+  echo "[0250-pool] FALHA ao baixar o pool, ve /var/log/panthera-pool.log" | tee -a /var/log/panthera-hooks.log
+  exit 1
+fi
+
+# Verificacao honesta: o pool sozinho tem de resolver o navegador SEM internet,
+# nenhuma dependencia buscada na rede. Se faltar algo, diz qual faltou em vez de
+# deixar o usuario descobrir na hora de instalar.
+echo "[0250-pool] conferindo se o pool cobre tudo sem internet..." | tee -a /var/log/panthera-hooks.log
+SIM=$(apt-get install -s --no-download "$POOL"/*.deb 2>&1 || true)
+if echo "$SIM" | grep -qE "^(E:|Unable to (acquire|fetch)|Err:)"; then
+  echo "[0250-pool] AVISO: o pool NAO cobre tudo offline. Dependencia faltando:" | tee -a /var/log/panthera-hooks.log
+  echo "$SIM" | grep -E "^(E:|Unable to|Err:)" | sed 's/^/[0250-pool]   /' | tee -a /var/log/panthera-hooks.log
+else
+  echo "[0250-pool] OK: pool instala offline sem buscar nada na rede" | tee -a /var/log/panthera-hooks.log
+fi
+
+TAM=$(du -sh "$POOL" | cut -f1)
+N=$(ls -1 "$POOL"/*.deb 2>/dev/null | wc -l)
+echo "[0250-pool] OK $N .deb, $TAM total, em $POOL" | tee -a /var/log/panthera-hooks.log

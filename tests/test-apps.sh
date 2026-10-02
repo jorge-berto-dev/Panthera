@@ -8,7 +8,7 @@ ok() { echo "[OK] $1"; }
 bad() { echo "[FALHA] $1"; FAIL=1; }
 
 echo "== 1. COMPILE-OK (Secao 26.1) =="
-for app in panthera-central panthera-store panthera-updater panthera-welcome panthera-theme-check; do
+for app in panthera-central panthera-store panthera-updater panthera-welcome panthera-theme-check panthera-catalogo; do
   python3 -m py_compile "scripts/${app}.py" && ok "compile $app" || bad "compile $app"
 done
 for shf in scripts/panthera-doctor.sh scripts/panthera-codecs.sh scripts/panthera-superleve.sh scripts/check-wayland.sh; do
@@ -19,6 +19,8 @@ echo "== 2. --help sem display =="
 for app in panthera-central panthera-store panthera-updater panthera-welcome; do
   python3 "scripts/${app}.py" --help >/dev/null 2>&1 && ok "$app --help" || bad "$app --help"
 done
+# --meus-kits do Bem-vindo: prova que ele le o catalogo de verdade
+python3 scripts/panthera-welcome.py --meus-kits >/dev/null 2>&1 && ok "welcome --meus-kits" || bad "welcome --meus-kits"
 
 echo "== 3. Central tem 11 abas (Secao 16) =="
 python3 -c "
@@ -44,7 +46,7 @@ print('clicked sempre via wrapper com try')
 echo "== 5. So stdlib + GTK3 (R6) =="
 python3 -c "
 import ast, glob
-permit = {'gi', 'subprocess', 'os', 'json', 'sys', 'zipfile', 'shutil'}
+permit = {'gi', 'subprocess', 'os', 'json', 'sys', 'zipfile', 'shutil', 'time', 'shlex', 're', 'catalogo', 'importlib'}
 for f in glob.glob('scripts/panthera-*.py'):
     tree = ast.parse(open(f).read())
     for n in ast.walk(tree):
@@ -107,9 +109,10 @@ cp scripts/panthera-doctor.sh /tmp/panthera-fase6-staging/usr/bin/panthera-docto
 cp scripts/panthera-codecs.sh /tmp/panthera-fase6-staging/usr/bin/panthera-codecs.sh
 cp scripts/panthera-superleve.sh /tmp/panthera-fase6-staging/usr/bin/panthera-superleve
 cp scripts/check-wayland.sh /tmp/panthera-fase6-staging/usr/bin/panthera-check-wayland
+cp scripts/panthera-firefox-policies.sh /tmp/panthera-fase6-staging/usr/bin/panthera-firefox-policies
 chmod +x /tmp/panthera-fase6-staging/usr/bin/panthera-*
 N=$(ls /tmp/panthera-fase6-staging/usr/bin/ | wc -l)
-[ "$N" -eq 9 ] && ok "9 apps em /usr/bin" || bad "9 apps em /usr/bin"
+[ "$N" -eq 10 ] && ok "10 apps em /usr/bin" || bad "10 apps em /usr/bin (achado $N)"
 grep -q "config/includes.chroot/usr/bin/panthera-central" build-iso.sh && ok "build-iso.sh entrega apps" || bad "build-iso.sh entrega apps"
 
 if [ "$FAIL" -ne 0 ]; then echo "APPS FALHOU"; exit 1; fi

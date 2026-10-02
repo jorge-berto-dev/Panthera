@@ -1,9 +1,9 @@
 [Desktop Entry]
 Name=Loja Panthera
-Comment=LibreOffice, VLC, GIMP e essenciais em 1 clique
+Comment=Kits com tamanho medido, e a lista do que recusamos e por que
 Exec=/usr/bin/panthera-store
 Icon=system-software-install
 Terminal=false
 Type=Application
 Categories=System;PackageManager;
-Keywords=loja;libreoffice;vlc;gimp;instalar;
+Keywords=loja;kits;instalar;navegador;escritorio;programar;

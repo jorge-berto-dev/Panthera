@@ -1,0 +1,12 @@
+[Desktop Entry]
+Type=X-GNOME-Metatheme
+Name=Panthera
+Comment=Pantera azul sobre escuro, acento #1D83FF
+Encoding=UTF-8
+
+[X-GNOME-Metatheme]
+GtkTheme=Panthera
+IconTheme=Panthera
+FontTheme=Adwaita Sans
+MetacityTheme=Adwaita
+CursorTheme=Adwaita

@@ -25,7 +25,7 @@ if [ "$1" = "--check" ]; then
   # PROIBIDO: snapd na ISO (Secao 3.2)
   if grep -q "^snapd$" packages-lists/panthera-base.list; then echo "[FALHA] snapd proibido na base"; FAIL=1; else echo "[OK] sem snapd"; fi
   grep -q bookworm live-build-config/auto/config && echo "[OK] base bookworm" || { echo "[FALHA] base nao e bookworm"; FAIL=1; }
-  for h in 0100-locale 0200-branding 0300-firefox 0400-hardening 0500-calamares 0600-cleanup; do
+  for h in 0100-locale 0200-branding 0250-pool 0300-firefox 0400-hardening 0500-calamares 0600-cleanup; do
     [ -x "hooks/live/${h}.hook.chroot" ] && echo "[OK] hook $h executavel" || { echo "[FALTA] hook $h"; FAIL=1; }
     bash -n "hooks/live/${h}.hook.chroot" && echo "[OK] sintaxe $h" || { echo "[FALHA] sintaxe $h"; FAIL=1; }
   done
@@ -36,6 +36,13 @@ if [ "$1" = "--check" ]; then
   [ -f includes.chroot/etc/sysctl.d/99-panthera.conf ] && echo "[OK] sysctl"
   [ -f includes.chroot/etc/sudoers.d/panthera ] && echo "[OK] sudoers"
   [ -f includes.chroot/etc/panthera/privacy-manifest.txt ] && echo "[OK] privacy-manifest"
+  # Catalogo Panthera (nova FASE 8): kits, apps, recusados e pool offline
+  python3 -m json.tool kits/catalogo.json >/dev/null && echo "[OK] kits/catalogo.json valido" || { echo "[FALHA] kits/catalogo.json"; FAIL=1; }
+  python3 -m py_compile scripts/panthera-catalogo.py && echo "[OK] compile panthera-catalogo" || { echo "[FALHA] compile panthera-catalogo"; FAIL=1; }
+  [ -x tests/test-kits.sh ] && echo "[OK] test-kits.sh executavel" || { echo "[FALTA] test-kits.sh"; FAIL=1; }
+  bash -n scripts/panthera-firefox-policies.sh && echo "[OK] sintaxe panthera-firefox-policies" || { echo "[FALHA] sintaxe panthera-firefox-policies"; FAIL=1; }
+  # Firefox saiu da base nativa: se voltar, a ISO infla e a promessa do pool quebra
+  if grep -qx "firefox-esr" packages-lists/panthera-base.list; then echo "[FALHA] firefox-esr voltou para a base nativa"; FAIL=1; else echo "[OK] Firefox fora da base (vem por Kit + pool)"; fi
   # FASE 6: apps compilam (Secao 26.1 COMPILE-OK)
   for app in panthera-central panthera-store panthera-updater panthera-welcome panthera-theme-check; do
     python3 -m py_compile "scripts/${app}.py" && echo "[OK] compile $app" || { echo "[FALHA] compile $app"; FAIL=1; }
@@ -94,7 +101,15 @@ cp scripts/panthera-doctor.sh config/includes.chroot/usr/bin/panthera-doctor
 cp scripts/panthera-codecs.sh config/includes.chroot/usr/bin/panthera-codecs.sh
 cp scripts/panthera-superleve.sh config/includes.chroot/usr/bin/panthera-superleve
 cp scripts/check-wayland.sh config/includes.chroot/usr/bin/panthera-check-wayland
+cp scripts/panthera-firefox-policies.sh config/includes.chroot/usr/bin/panthera-firefox-policies
 chmod +x config/includes.chroot/usr/bin/panthera-*
+# Catalogo Panthera: fonte unica da Loja, do Bem-vindo e do pool offline.
+# Novo Kit = editar kits/catalogo.json, sem rebuild e sem tocar em Python.
+mkdir -p config/includes.chroot/usr/share/panthera-store config/includes.chroot/usr/lib/panthera
+cp kits/catalogo.json config/includes.chroot/usr/share/panthera-store/catalogo.json
+cp scripts/panthera-catalogo.py config/includes.chroot/usr/lib/panthera/catalogo.py
+chmod 644 config/includes.chroot/usr/share/panthera-store/catalogo.json
+chmod 755 config/includes.chroot/usr/lib/panthera/catalogo.py
 # Log do build (cauda de 50 linhas pedida na Secao 20.2)
 {
 echo "[Panthera] build iniciado $(date -u +%Y-%m-%dT%H:%M:%SZ) base=bookworm"

@@ -1,0 +1,175 @@
+{
+  "versao": 1,
+  "nome": "Catalogo Panthera",
+  "desc": "Tudo aqui e verificado: origem unica, sem telemetria, sem repo de terceiro. Tamanho e RAM sao medidos, nunca digitados.",
+  "origens": {
+    "apt": [
+      "deb.debian.org/debian"
+    ],
+    "flatpak": [
+      "flathub"
+    ]
+  },
+  "recusados": {
+    "snapd": "Snap nao e suportado pela Panthera (ODT 3.2)",
+    "popularity-contest": "Envia estatisticas de uso do seu PC para a Debian",
+    "whoopsie": "Envia relatorio de erro do seu PC para a Debian",
+    "command-not-found": "Consulta servidores externos a cada comando digitado",
+    "gnome-mines": "Jogo, nao faz parte do sistema",
+    "gnome-sudoku": "Jogo, nao faz parte do sistema",
+    "gnome-tali": "Jogo, nao faz parte do sistema",
+    "aisleriot": "Jogo, nao faz parte do sistema",
+    "x11-apps": "60 programas graficos antigos, nao usados na pratica",
+    "tracker-miners": "Indexa o disco inteiro e consome bateria",
+    "transmission-gtk": "Cliente de torrent, alto risco de conteudo pirata",
+    "pidgin": "Cliente de mensageiro descontinuado"
+  },
+  "pool_offline": [
+    "firefox-esr",
+    "firefox-esr-l10n-pt-br"
+  ],
+  "apps": {
+    "navegador": {
+      "nome": "Navegador Panthera",
+      "desc": "Firefox ESR, bloqueia rastreador, HTTPS obrigatorio",
+      "pacotes": [
+        "firefox-esr",
+        "firefox-esr-l10n-pt-br"
+      ],
+      "origem": "apt",
+      "ram_min_mb": 1024
+    },
+    "escritorio": {
+      "nome": "Escritorio completo",
+      "desc": "LibreOffice: texto, planilha, apresentacao, desenho",
+      "pacotes": [
+        "libreoffice"
+      ],
+      "origem": "apt",
+      "ram_min_mb": 2048
+    },
+    "texto": {
+      "nome": "Documentos e PDF",
+      "desc": "Writer, Calc, Impress, Draw e PDF",
+      "pacotes": [
+        "libreoffice-writer",
+        "libreoffice-calc",
+        "libreoffice-impress",
+        "libreoffice-draw"
+      ],
+      "origem": "apt",
+      "ram_min_mb": 1024
+    },
+    "video": {
+      "nome": "Video e multimedia",
+      "desc": "VLC com todos os codecs",
+      "pacotes": [
+        "vlc"
+      ],
+      "origem": "apt",
+      "ram_min_mb": 1024
+    },
+    "codecs": {
+      "nome": "Ativar videos e musicas",
+      "desc": "Codecs que o Debian nao distribui por licenca",
+      "comando": [
+        "/usr/bin/panthera-codecs.sh"
+      ],
+      "origem": "script",
+      "ram_min_mb": 0
+    },
+    "design": {
+      "nome": "Editar imagens",
+      "desc": "GIMP, o substituto livre do Photoshop",
+      "pacotes": [
+        "gimp"
+      ],
+      "origem": "apt",
+      "ram_min_mb": 2048
+    },
+    "programar": {
+      "nome": "Programar",
+      "desc": "Compilador C/C++, Git, Vim",
+      "pacotes": [
+        "build-essential",
+        "git",
+        "vim"
+      ],
+      "origem": "apt",
+      "ram_min_mb": 2048
+    },
+    "python": {
+      "nome": "Python",
+      "desc": "Interpretador, gerenciador de pacotes e ferramentas",
+      "pacotes": [
+        "python3",
+        "python3-pip",
+        "python3-venv"
+      ],
+      "origem": "apt",
+      "ram_min_mb": 512
+    },
+    "visual": {
+      "nome": "VS Code",
+      "desc": "Editor de codigo da Microsoft, via Flatpak",
+      "pacotes": [
+        "com.visualstudio.code"
+      ],
+      "origem": "flatpak",
+      "ram_min_mb": 2048
+    }
+  },
+  "kits": {
+    "leve": {
+      "nome": "Leve",
+      "desc": "Para o dia a dia. Cabe em 2GB de memoria.",
+      "apps": [
+        "navegador",
+        "texto"
+      ],
+      "padrao": true
+    },
+    "escritorio": {
+      "nome": "Escritorio",
+      "desc": "Tudo para trabalhar com documentos e planilhas.",
+      "apps": [
+        "navegador",
+        "escritorio"
+      ],
+      "padrao": false
+    },
+    "aula": {
+      "nome": "Aula e video",
+      "desc": "Apresentacoes, video e os codecs que faltam.",
+      "apps": [
+        "navegador",
+        "texto",
+        "video",
+        "codecs"
+      ],
+      "padrao": false
+    },
+    "criacao": {
+      "nome": "Criacao",
+      "desc": "Editar imagens e assistir video.",
+      "apps": [
+        "navegador",
+        "video",
+        "codecs",
+        "design"
+      ],
+      "padrao": false
+    },
+    "programador": {
+      "nome": "Programador",
+      "desc": "Compilador, Git, Python e VS Code.",
+      "apps": [
+        "navegador",
+        "programar",
+        "python",
+        "visual"
+      ],
+      "padrao": false
+    }
+  }
+}

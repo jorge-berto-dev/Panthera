@@ -21,13 +21,13 @@ if grep -q "cjk" packages-lists/panthera-base.list; then echo "[FALHA] CJK proib
 echo "[OK] sem pacotes espiões na base"
 
 echo "== arquivos FASE 2-6 =="
-for f in build-iso.sh packages-lists/panthera-base.list packages-lists/panthera-remove.list live-build-config/auto/config calamares/settings.conf firefox/policies.json firefox/distribution.ini scripts/panthera-doctor.sh scripts/check-wayland.sh scripts/panthera-central.py scripts/panthera-store.py scripts/panthera-updater.py scripts/panthera-welcome.py scripts/panthera-theme-check.py scripts/panthera-superleve.sh tests/test-hardening.sh tests/test-apps.sh tests/test-final.sh includes.chroot/usr/share/panthera-ajuda/index.html includes.chroot/usr/share/applications/panthera-central.desktop includes.chroot/usr/share/applications/panthera-store.desktop includes.chroot/usr/share/applications/panthera-updater.desktop includes.chroot/etc/xdg/autostart/panthera-welcome.desktop includes.chroot/etc/sysctl.d/99-panthera.conf includes.chroot/etc/sudoers.d/panthera includes.chroot/etc/panthera/privacy-manifest.txt includes.chroot/etc/panthera/removed-bloat.txt includes.chroot/etc/panthera/version includes.chroot/etc/security/limits.d/panthera.conf includes.chroot/etc/default/grub includes.chroot/etc/udisks2/mount_options.conf; do
+for f in kits/catalogo.json scripts/panthera-catalogo.py scripts/panthera-firefox-policies.sh tests/test-kits.sh build-iso.sh packages-lists/panthera-base.list packages-lists/panthera-remove.list live-build-config/auto/config calamares/settings.conf firefox/policies.json firefox/distribution.ini scripts/panthera-doctor.sh scripts/check-wayland.sh scripts/panthera-central.py scripts/panthera-store.py scripts/panthera-updater.py scripts/panthera-welcome.py scripts/panthera-theme-check.py scripts/panthera-superleve.sh tests/test-hardening.sh tests/test-apps.sh tests/test-final.sh includes.chroot/usr/share/panthera-ajuda/index.html includes.chroot/usr/share/applications/panthera-central.desktop includes.chroot/usr/share/applications/panthera-store.desktop includes.chroot/usr/share/applications/panthera-updater.desktop includes.chroot/etc/xdg/autostart/panthera-welcome.desktop includes.chroot/etc/sysctl.d/99-panthera.conf includes.chroot/etc/sudoers.d/panthera includes.chroot/etc/panthera/privacy-manifest.txt includes.chroot/etc/panthera/removed-bloat.txt includes.chroot/etc/panthera/version includes.chroot/etc/security/limits.d/panthera.conf includes.chroot/etc/default/grub includes.chroot/etc/udisks2/mount_options.conf; do
   if [ -f "$f" ]; then echo "[OK] $f"; else echo "[FALTA] $f"; exit 1; fi
 done
 
 echo "== hooks 0100-0600 =="
 N=$(ls hooks/live/*.hook.chroot 2>/dev/null | wc -l)
-if [ "$N" -eq 6 ]; then echo "[OK] 6 hooks"; else echo "[FALHA] esperado 6 hooks, achado $N"; exit 1; fi
+if [ "$N" -eq 7 ]; then echo "[OK] 7 hooks"; else echo "[FALHA] esperado 7 hooks (0250-pool entrou), achado $N"; exit 1; fi
 for h in hooks/live/*.hook.chroot; do
   [ -x "$h" ] || { echo "[FALHA] sem +x: $h"; exit 1; }
   bash -n "$h" || { echo "[FALHA] sintaxe: $h"; exit 1; }
@@ -37,6 +37,9 @@ echo "[OK] hooks executaveis + sintaxe"
 echo "== configs =="
 python3 -m json.tool firefox/policies.json >/dev/null && echo "[OK] policies.json valido" || { echo "[FALHA] policies.json"; exit 1; }
 grep -q "DisableTelemetry" firefox/policies.json && echo "[OK] policies sem telemetria"
+grep -q "about:panthera-welcome" firefox/policies.json && { echo "[FALHA] policies aponta para about:panthera-welcome (pagina inexistente)"; exit 1; }
+grep -q "raposa" includes.chroot/usr/share/panthera-ajuda/index.html && { echo "[FALHA] ajuda offline ainda manda abrir o Firefox nativo"; exit 1; }
+echo "[OK] ajuda offline nao depende de navegador especifico"
 grep -q "kernel.yama.ptrace_scope=2" includes.chroot/etc/sysctl.d/99-panthera.conf && echo "[OK] sysctl 12 chaves (amostra ptrace_scope)"
 grep -q "timestamp_timeout=10" includes.chroot/etc/sudoers.d/panthera && echo "[OK] sudoers timeout 10"
 bash -n build-iso.sh && echo "[OK] build-iso.sh sintaxe"

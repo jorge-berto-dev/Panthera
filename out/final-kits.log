@@ -1,0 +1,40 @@
+== 1. arquivos e JSON ==
+[OK] kits/catalogo.json existe
+[OK] scripts/panthera-catalogo.py existe
+[OK] catalogo e JSON valido
+== 2. schema: secoes obrigatorias ==
+[OK] apps/kits/recusados/pool_offline presentes
+== 3. nenhum pacote recusado aparece em app ou kit ==
+[OK] recusados nao vazam para o catalogo
+== 4. snapd proibido: recusado e nunca oferecido (ODT 3.2) ==
+[OK] snapd recusado e ausente dos apps
+== 5. nenhum item de app ja esta na base (seria redundante) ==
+[OK] nenhum app repete pacote da base
+== 6. Firefox fora da base nativa, mas no catalogo e no pool ==
+[OK] firefox-esr saiu da base nativa
+[OK] firefox-esr continua acessivel pelo catalogo
+[OK] firefox-esr esta no pool offline (ISO funciona sem internet)
+== 7. GNOME Software fora, senao a recusa e enfeite ==
+[OK] gnome-software nao esta na base, a garantia e real
+== 8. pool_offline tem pacotes que existem em algum app ==
+[OK] pool_offline referenciado por algum app
+== 9. kits resolvem e nao viram string de comando ==
+[OK] todos os kits resolvem
+== 10. uma transacao apt por kit, nao um apt por pacote ==
+[OK] no maximo uma transacao apt por kit
+== 11. tamanhos sao medidos, nunca digitados ==
+[OK] nenhum tamanho digitado no catalogo
+[OK] a Loja nao tem tamanho fixo no codigo
+== 12. modulos e apps que usam o catalogo ==
+[OK] compila panthera-catalogo
+[OK] compila panthera-store
+[OK] panthera-store --help sem display
+[OK] compila panthera-welcome
+[OK] panthera-welcome --help sem display
+[OK] Loja acha o catalogo instalado
+[OK] Bem-vindo acha o catalogo instalado
+== 13. script de policies do Firefox ==
+[OK] panthera-firefox-policies executavel
+[OK] sintaxe ok
+[OK] hook do apt instalado pelo 0300
+KITS PASS. DoD manual: abrir a Loja, ver os 5 kits com tamanho medido, instalar o Kit Leve, conferir a aba de recusados.

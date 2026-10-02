@@ -55,20 +55,22 @@ cups-filters
 hplip
 printer-driver-gutenprint
 simple-scan
-firefox-esr
-firefox-esr-l10n-pt-br
 flatpak
 xdg-desktop-portal
 xdg-desktop-portal-gtk
-gnome-software
-gnome-software-plugin-flatpak
 ufw
 apparmor
 apparmor-profiles
 unattended-upgrades
 clamav
 clamtk
+# python3-gi + gir1.2-gtk-3.0: os 4 apps GTK (Central, Loja, Atualizador,
+# Boas-vindas) fazem "import gi", e o hook 0200 valida o gtk.css com Gtk.CssProvider.
+# Chegavam so por dependencia do clamtk; agora sao explicitos.
+python3-gi
+gir1.2-gtk-3.0
 calamares
 fonts-inter
 fonts-noto-core
 hunspell-pt-br
+xdg-utils

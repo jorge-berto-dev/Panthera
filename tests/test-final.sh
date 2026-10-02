@@ -32,6 +32,7 @@ run check ./build-iso.sh --check
 run iso ./tests/test-iso.sh
 run hardening ./tests/test-hardening.sh
 run apps ./tests/test-apps.sh
+run kits ./tests/test-kits.sh
 
 echo "== artefatos FASE 7 =="
 for f in guias/GUIA-VENTOY.md guias/GUIA-INSTALACAO.md includes.chroot/usr/share/panthera-ajuda/index.html; do
@@ -51,17 +52,18 @@ echo "PENDENTE T-RAM: free -m 2min apos boot, idle <=700MB"
 echo "PENDENTE T-DISCO: df / instalado 6-9GB"
 echo "PENDENTE T-WIFI-SOM-VIDEO: YouTube 720p 60s + som + impressao sem travar"
 echo "PENDENTE T-SEC: 10 provas Secao 9 (comandos no fim de out/provas.txt)"
-echo "PENDENTE T-CIDA: Firefox + papel + atualizar <=3 cliques sem terminal (ajuda offline)"
+echo "PENDENTE T-CIDA: instalar Kit Leve (navegador via pool offline) + papel + atualizar <=3 cliques sem terminal"
 echo "PENDENTE T-NVIDIA: driver com erro volta nouveau, log, sem preta eterna"
 echo ""
 echo "== peso RF001 (politica Secao 8 + 20.7) =="
 echo "Teto 2252MB. build-iso.sh reprova acima. Se pesar, cortar nesta ordem:"
 echo "1) fontes CJK extras 2) docs/mans restantes 3) impressoras raras 4) jogos."
-echo "Nunca cortar: firmware Wi-Fi, Firefox ESR, Calamares."
+echo "Nunca cortar: firmware Wi-Fi, Calamares, pool offline do Firefox (0250-pool)."
 echo "Corte atual no hook 0600: apt clean + /usr/share/doc + /usr/share/man + caches."
 echo ""
 echo "== bundle de entrega =="
 echo "out/panthera-v1.0-uso-geral-amd64-hybrid.iso + .sha256 (gerar em Debian 12: sudo ./build-iso.sh)"
+echo "kits/catalogo.json = catalogo entregue na ISO em /usr/share/panthera-store/catalogo.json"
 echo "guias/GUIA-VENTOY.md + guias/GUIA-INSTALACAO.md + out/matriz.txt + out/provas.txt"
 } >> "$MATRIZ"
 

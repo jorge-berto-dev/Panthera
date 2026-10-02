@@ -1,37 +1,58 @@
 #!/bin/bash
-# hooks/live/0300-firefox.hook.chroot - Firefox ESR PT-BR + policies + uBlock (ODT Secao 8 e 15.3)
+# hooks/live/0300-firefox.hook.chroot - policies do Firefox ESR (ODT Secao 8)
 # Roda DENTRO do chroot. Idempotente.
+#
+# O Firefox NAO esta mais na base nativa (ele sai pelo Kit e pelo pool offline).
+# Este hook nao instala o pacote: ele valida e entrega as policies em
+# /usr/share/panthera-firefox/. Quem instala as policies no /usr/lib/firefox-esr
+# e o /usr/bin/panthera-firefox-policies, chamado aqui no build e tambem via
+# /etc/apt/apt.hooks.d/90panthera-firefox a cada transacao do apt. Assim
+# funciona igual se o Firefox veio de um Kit, do pool offline ou de um
+# "sudo apt install firefox-esr" na mao.
 set -e
 mkdir -p /var/log/panthera
 echo "[0300-firefox] $(date -u +%Y-%m-%dT%H:%M:%SZ) inicio" | tee -a /var/log/panthera-hooks.log
 SRC="/tmp/panthera-src"
 if [ ! -d "$SRC/firefox" ] && [ -d firefox ]; then SRC="."; fi
-mkdir -p /usr/lib/firefox-esr/distribution
-# Policies OBRIGATORIAS (Secao 8: telemetria off, DoH Quad9, uBlock forcado)
+mkdir -p /usr/share/panthera-firefox
+# Policies OBRIGATORIAS (Secao 8: telemetria off, DoH Quad9, uBlock)
 # Reprova o build se o JSON for invalido ou faltar chave (R7 DoD FASE 5)
 if [ -f "$SRC/firefox/policies.json" ]; then
   python3 -m json.tool "$SRC/firefox/policies.json" >/dev/null
   for chave in DisableTelemetry DisableFirefoxStudies DisablePocket DNSOverHTTPS ExtensionSettings; do
     grep -q "$chave" "$SRC/firefox/policies.json" || { echo "[0300-firefox] FALHA: sem $chave em policies.json" | tee -a /var/log/panthera-hooks.log; exit 1; }
   done
-  cp "$SRC/firefox/policies.json" /usr/lib/firefox-esr/distribution/policies.json
+  # about:panthera-welcome NAO existe no Firefox: ja apontava para uma pagina
+  # inexistente e a homepage abria "nao encontramos esse site" em toda aba nova.
+  grep -q "about:panthera-welcome" "$SRC/firefox/policies.json" && { echo "[0300-firefox] FALHA: policies aponta para about:panthera-welcome, pagina que nao existe" | tee -a /var/log/panthera-hooks.log; exit 1; }
+  cp "$SRC/firefox/policies.json" /usr/share/panthera-firefox/policies.json
 fi
 if [ -f "$SRC/firefox/distribution.ini" ]; then
-  cp "$SRC/firefox/distribution.ini" /usr/lib/firefox-esr/distribution/distribution.ini
+  cp "$SRC/firefox/distribution.ini" /usr/share/panthera-firefox/distribution.ini
 fi
-chmod 644 /usr/lib/firefox-esr/distribution/policies.json /usr/lib/firefox-esr/distribution/distribution.ini 2>/dev/null || true
+chmod 644 /usr/share/panthera-firefox/policies.json /usr/share/panthera-firefox/distribution.ini 2>/dev/null || true
 # Extensoes locais (se houver .xpi no projeto; senao uBlock vem via policies)
-mkdir -p /usr/share/panthera-firefox
-cp "$SRC/firefox/extensions/"*.xpi /usr/share/panthera-firefox/ 2>/dev/null || echo "[0300-firefox] uBlock via policies.json (sem .xpi local)" | tee -a /var/log/panthera-hooks.log
+mkdir -p /usr/share/panthera-firefox/extensions
+cp "$SRC/firefox/extensions/"*.xpi /usr/share/panthera-firefox/extensions/ 2>/dev/null || echo "[0300-firefox] uBlock via policies.json (sem .xpi local)" | tee -a /var/log/panthera-hooks.log
+
+# Hook do apt: entrega as policies a CADA transacao, mesmo se o usuario instalar
+# o Firefox na mao. Sem isso, um Firefox instalado fora do Kit nasceria sem
+# nenhuma protecao. Nao pode falhar nem travar o apt.
+mkdir -p /etc/apt/apt.hooks.d
+cat > /etc/apt/apt.hooks.d/90panthera-firefox <<'HOOK'
+DPkg::Post-Invoke { "/usr/bin/panthera-firefox-policies || true"; };
+HOOK
+chmod 644 /etc/apt/apt.hooks.d/90panthera-firefox
+
 # Atalho Boas-vindas (abre apos login no Live)
 mkdir -p /usr/share/applications
 cat > /usr/share/applications/panthera-welcome.desktop <<EOF
 [Desktop Entry]
 Name=Bem-vindo Panthera
 Comment=Guia inicial Panthera
-Exec=firefox about:panthera-welcome
+Exec=firefox-esr file:///usr/share/panthera-ajuda/index.html
 Icon=firefox-esr
 Type=Application
 Categories=Utility;
 EOF
-echo "[0300-firefox] OK" | tee -a /var/log/panthera-hooks.log
+echo "[0300-firefox] OK policies em /usr/share/panthera-firefox + hook do apt" | tee -a /var/log/panthera-hooks.log

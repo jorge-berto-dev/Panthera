@@ -12,11 +12,33 @@ B="$SRC/branding"
 
 # 1. Tema GTK Panthera (paleta oficial Secao 4.1)
 mkdir -p /usr/share/themes/Panthera/gtk-3.0 /usr/share/themes/Panthera
+if [ -f "$B/themes/Panthera/index.theme" ]; then
+  cp "$B/themes/Panthera/index.theme" /usr/share/themes/Panthera/index.theme
+else
+  echo "[0200-branding] AVISO: index.theme ausente em $B (GTK3 ignora o tema)" | tee -a /var/log/panthera-hooks.log
+fi
 if [ -f "$B/themes/Panthera/gtk.css" ]; then
   cp "$B/themes/Panthera/gtk.css" /usr/share/themes/Panthera/gtk-3.0/gtk.css
   cp "$B/themes/Panthera/gtk.css" /usr/share/themes/Panthera/gtk.css
 else
   echo "[0200-branding] AVISO: gtk.css ausente em $B" | tee -a /var/log/panthera-hooks.log
+fi
+# Reprova o build se o CSS nao compilar no GTK3. GTK3 nao suporta var() (isso e
+# GTK4): um unico var() invalido faz o GTK descartar o gtk.css inteiro e a ISO
+# silenciosamente sai com o tema do Debian 12. Mesma politica do 0300 com o JSON.
+if [ -f /usr/share/themes/Panthera/gtk-3.0/gtk.css ]; then
+  if python3 -c "
+import gi
+gi.require_version('Gtk', '3.0')
+from gi.repository import Gtk
+Gtk.CssProvider().load_from_path('/usr/share/themes/Panthera/gtk-3.0/gtk.css')
+" 2>/tmp/panthera-css.err; then
+    echo "[0200-branding] OK gtk.css compila no GTK3" | tee -a /var/log/panthera-hooks.log
+  else
+    echo "[0200-branding] FALHA: gtk.css invalido no GTK3, tema seria descartado" | tee -a /var/log/panthera-hooks.log
+    cat /tmp/panthera-css.err | tee -a /var/log/panthera-hooks.log
+    exit 1
+  fi
 fi
 
 # 2. Icones Panthera (outline 1.5px #1D83FF, herda Papirus)
@@ -89,3 +111,88 @@ if [ -d "$B/skel" ]; then
   cp "$B/skel/"* /etc/skel/.config/panthera/ 2>/dev/null || true
 fi
 echo "[0200-branding] OK tema+icones+grub+plymouth+greeter" | tee -a /var/log/panthera-hooks.log
+
+# 8. APLICAR de verdade (a versao anterior so copiava arquivos: o XFCE continuava
+#    com o tema/icones/papel de parede do Debian 12). Gerado por deve ser ~/.config,
+#    nunca /usr ou /etc direto (RNF005).
+WALL_SVG=/usr/share/backgrounds/panthera/wallpaper.svg
+WALL_PNG=/usr/share/backgrounds/panthera/wallpaper.png
+if [ ! -f "$WALL_PNG" ]; then
+  if command -v rsvg-convert >/dev/null 2>&1 && [ -f "$WALL_SVG" ]; then
+    rsvg-convert -w 1920 -h 1080 "$WALL_SVG" -o "$WALL_PNG" 2>/dev/null || true
+  elif command -v convert >/dev/null 2>&1 && [ -f "$WALL_SVG" ]; then
+    convert "$WALL_SVG" -resize 1920x1080! "$WALL_PNG" 2>/dev/null || true
+  fi
+fi
+if [ ! -f "$WALL_PNG" ]; then
+  echo "[0200-branding] AVISO: sem rsvg-convert/convert, sem wallpaper.png (XFCE nao usa SVG)" | tee -a /var/log/panthera-hooks.log
+else
+  mkdir -p /usr/share/backgrounds/xfce
+  cat > /usr/share/backgrounds/xfce/panthera.xml <<EOF
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE wallpapers SYSTEM "xfce-wallpaper.dtd">
+<wallpapers>
+  <wallpaper deleted="false">
+    <name>Panthera</name>
+     <filename>$WALL_PNG</filename>
+    <options>stretched</options>
+    <shade_type>solid</shade_type>
+    <pcolor>#0B111C</pcolor>
+    <scolor>#0B111C</scolor>
+  </wallpaper>
+</wallpapers>
+EOF
+fi
+
+aplicar_home() {
+  H="$1"
+  mkdir -p "$H/.config/gtk-3.0" "$H/.config/xfce4/xfconf/xfce-perchannel-desktop" "$H/.config/xfwm4"
+  cat > "$H/.config/gtk-3.0/settings.ini" <<EOF
+[Settings]
+gtk-theme-name=Panthera
+gtk-icon-theme-name=Panthera
+gtk-font-name=Inter 10
+EOF
+  cat > "$H/.gtkrc-2.0" <<EOF
+gtk-theme-name="Panthera"
+gtk-icon-theme-name="Panthera"
+gtk-font-name="Inter 10"
+EOF
+  cat > "$H/.config/xfce4/xfconf/xfce-perchannel-desktop/xfce4-desktop.xml" <<EOF
+<?xml version="1.0" encoding="UTF-8"?>
+<channel name="xfce4-desktop" version="1.0">
+  <property name="backdrop" type="empty">
+    <property name="screen0" type="empty">
+      <property name="workspace0" type="empty">
+        <property name="color-style" type="int" value="0"/>
+        <property name="color1" type="string" value="#0B111C"/>
+        <property name="image-style" type="int" value="2"/>
+        <property name="last-image" type="string" value="$WALL_PNG"/>
+      </property>
+    </property>
+  </property>
+</channel>
+EOF
+  cat > "$H/.config/xfwm4/xfwm4rc" <<EOF
+active_title_color=#1D83FF
+active_title_text_color=#FFFFFF
+inactive_title_color=#141B2B
+inactive_title_text_color=#8490A4
+title_shadow_active=false
+title_shadow_inactive=false
+button_offset=4
+button_spacing=2
+shadow_opacity=0
+EOF
+}
+
+aplicar_home /etc/skel
+# live-build cria o usuario do Live ANTES dos hooks, entao /etc/skel nunca chega nele.
+for LIVE_USER in user panthera; do
+  if [ -d "/home/$LIVE_USER" ]; then
+    aplicar_home "/home/$LIVE_USER"
+    chown -R "$LIVE_USER:$LIVE_USER" "/home/$LIVE_USER/.config" "/home/$LIVE_USER/.gtkrc-2.0" 2>/dev/null || true
+    echo "[0200-branding] aplicado em /home/$LIVE_USER" | tee -a /var/log/panthera-hooks.log
+  fi
+done
+echo "[0200-branding] OK tema+icones+wallpaper+xfwm aplicados" | tee -a /var/log/panthera-hooks.log

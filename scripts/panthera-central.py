@@ -194,7 +194,23 @@ class Central(Gtk.Window):
         self.lbl(v, "Panthera v1 Uso Geral. Copie info para suporte com 1 clique.")
         self.btn(v, "Copiar info do PC", lambda: self.say(sh("cat /etc/panthera/version 2>/dev/null; lscpu 2>/dev/null | grep 'Model name'; free -h 2>/dev/null | head -2; df -h / 2>/dev/null | tail -1")))
         self.btn(v, "Doutor completo", lambda: self.say(sh("/usr/bin/panthera-doctor --check all 2>&1 | tail -30")))
-        self.btn(v, "Ajuda offline (I11)", lambda: subprocess.Popen("firefox file:///usr/share/panthera-ajuda/index.html 2>/dev/null || xdg-open file:///usr/share/panthera-ajuda/index.html 2>/dev/null || echo sem-ajuda", shell=True))
+        self.btn(v, "Ajuda offline (I11)", lambda: self.abrir_ajuda())
+
+    def abrir_ajuda(self):
+        """Abre a ajuda offline em HTML.
+
+        O Firefox saiu da base nativa, entao nao da para chamar ele pelo nome:
+        usa xdg-open, que respeita o navegador padrao do usuario. Se nao houver
+        nenhum navegador instalado, mostra o caminho do arquivo em vez de
+        falhar em silencio (o botao e medido pelo teste T-CIDA).
+        """
+        html = "/usr/share/panthera-ajuda/index.html"
+        try:
+            subprocess.Popen(["xdg-open", html], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        except Exception as e:
+            print(f"Erro tratado ao abrir ajuda: {e}")
+            self.say(sh(f"ls -l {html} 2>&1; echo; echo Sem navegador instalado. "
+                        f"Instale o Kit Leve na Loja para ter um."))
 
     def on_search(self, entry):
         try:

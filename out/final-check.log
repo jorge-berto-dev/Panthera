@@ -6,6 +6,8 @@
 [OK] sintaxe 0100-locale
 [OK] hook 0200-branding executavel
 [OK] sintaxe 0200-branding
+[OK] hook 0250-pool executavel
+[OK] sintaxe 0250-pool
 [OK] hook 0300-firefox executavel
 [OK] sintaxe 0300-firefox
 [OK] hook 0400-hardening executavel
@@ -21,6 +23,11 @@
 [OK] sysctl
 [OK] sudoers
 [OK] privacy-manifest
+[OK] kits/catalogo.json valido
+[OK] compile panthera-catalogo
+[OK] test-kits.sh executavel
+[OK] sintaxe panthera-firefox-policies
+[OK] Firefox fora da base (vem por Kit + pool)
 [OK] compile panthera-central
 [OK] compile panthera-store
 [OK] compile panthera-updater

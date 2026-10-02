@@ -1,4 +1,4 @@
-Panthera v1 - 10 provas de seguranca (FASE 5) - 2026-09-29T23:11:27Z
+Panthera v1 - 10 provas de seguranca (FASE 5) - 2026-10-02T17:29:39Z
 Projeto: /home/khyb/panthera
 
 --- prova 1: ufw deny incoming / allow outgoing ---
@@ -18,7 +18,7 @@ enable: ufw apparmor upgrades cups NM timesyncd OK
 RESULTADO: PASS
 
 --- prova 5: policies.json (telemetria off, DoH Quad9, uBlock) ---
-policies + l10n-pt-br OK
+policies + entrega por hook do apt OK
 RESULTADO: PASS
 
 --- prova 6: usb noexec,nodev,nosuid ---

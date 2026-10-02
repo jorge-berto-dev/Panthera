@@ -1,10 +1,11 @@
-Panthera v1 - matriz de release FASE 7 - 2026-09-29T23:11:26Z
+Panthera v1 - matriz de release FASE 7 - 2026-10-02T17:29:38Z
 Autoridade: Panthera_OS_Prompt_Mestre.odt Secao 12
 
 PASS estatico check
 PASS estatico iso
 PASS estatico hardening
 PASS estatico apps
+PASS estatico kits
 PASS guias/GUIA-VENTOY.md
 PASS guias/GUIA-INSTALACAO.md
 PASS includes.chroot/usr/share/panthera-ajuda/index.html
@@ -19,15 +20,16 @@ PENDENTE T-RAM: free -m 2min apos boot, idle <=700MB
 PENDENTE T-DISCO: df / instalado 6-9GB
 PENDENTE T-WIFI-SOM-VIDEO: YouTube 720p 60s + som + impressao sem travar
 PENDENTE T-SEC: 10 provas Secao 9 (comandos no fim de out/provas.txt)
-PENDENTE T-CIDA: Firefox + papel + atualizar <=3 cliques sem terminal (ajuda offline)
+PENDENTE T-CIDA: instalar Kit Leve (navegador via pool offline) + papel + atualizar <=3 cliques sem terminal
 PENDENTE T-NVIDIA: driver com erro volta nouveau, log, sem preta eterna
 
 == peso RF001 (politica Secao 8 + 20.7) ==
 Teto 2252MB. build-iso.sh reprova acima. Se pesar, cortar nesta ordem:
 1) fontes CJK extras 2) docs/mans restantes 3) impressoras raras 4) jogos.
-Nunca cortar: firmware Wi-Fi, Firefox ESR, Calamares.
+Nunca cortar: firmware Wi-Fi, Calamares, pool offline do Firefox (0250-pool).
 Corte atual no hook 0600: apt clean + /usr/share/doc + /usr/share/man + caches.
 
 == bundle de entrega ==
 out/panthera-v1.0-uso-geral-amd64-hybrid.iso + .sha256 (gerar em Debian 12: sudo ./build-iso.sh)
+kits/catalogo.json = catalogo entregue na ISO em /usr/share/panthera-store/catalogo.json
 guias/GUIA-VENTOY.md + guias/GUIA-INSTALACAO.md + out/matriz.txt + out/provas.txt

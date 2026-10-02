@@ -3,14 +3,14 @@
 # Roda DENTRO do chroot POR ULTIMO. Idempotente.
 # Ordem de corte Secao 20.7: CJK -> docs -> impressoras raras -> jogos.
 # (base nao tem CJK/jogos; o gordo e locale + help + listas apt.)
-# Nunca corta: firmware, Firefox, Calamares (Secao 8).
+# Nunca corta: firmware, Calamares e o pool offline do Firefox (Secao 8).
 set -e
 mkdir -p /var/log/panthera
 echo "[0600-cleanup] $(date -u +%Y-%m-%dT%H:%M:%SZ) inicio" | tee -a /var/log/panthera-hooks.log
 ANTES=$(du -sm / 2>/dev/null | cut -f1)
 # Limpa cache apt
 apt clean || true
-# Remove docs/mans/info (nunca firmware, Firefox ou Wi-Fi - Secao 8)
+# Remove docs/mans/info (nunca firmware, Wi-Fi, Calamares ou /var/cache/panthera-pool)
 rm -rf /usr/share/doc/* /usr/share/man/* /usr/share/info/* 2>/dev/null || true
 rm -rf /usr/share/lintian/* /usr/share/linda/* /usr/share/gtk-doc/* 2>/dev/null || true
 # Ajuda GNOME (yelp): pesada, ajuda Panthera offline fica em /usr/share/panthera-ajuda

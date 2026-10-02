@@ -1,6 +1,7 @@
 Panthera v1 privacy-manifest 2026-09-29
 Removido: snapd apport whoopsie popularity-contest ubuntu-report tracker zeitgeist evolution thunderbird
 Desligado: localizacao relatorios login-online ssh-server
-Firewall: deny incoming allow outgoing, DoH Quad9 no Firefox
+Firewall: deny incoming allow outgoing, DoH Quad9 no Firefox (quando instalado, via policies entregues pelo apt)
 Audite: dpkg -l | grep -E snapd|apport; ss -tulpn; about:telemetry
 Suporte: Central Privacidade botao Prova
+Catalogo: a Loja so oferece Debian e Flathub, e recusa pacotes com telemetria. Os motivos ficam visiveis na aba 'O que recusamos'.

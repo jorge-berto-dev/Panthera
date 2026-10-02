@@ -60,7 +60,10 @@ prova 4 "servicos enable so essenciais (sem snap/tracker)" bash -c '
   ! grep "systemctl enable" hooks/live/0400-hardening.hook.chroot | grep -q -E "snapd|tracker|apport" &&
   echo "enable: ufw apparmor upgrades cups NM timesyncd OK"'
 
-# 5. policies Firefox ativas (Secao 8): JSON valido + 6 chaves + l10n
+# 5. policies Firefox (Secao 8): JSON valido + 6 chaves + entrega por hook do apt.
+# O Firefox saiu da base nativa, entao l10n-pt-br nao e mais exigencia da base:
+# o que passa a valer e que as policies cheguem ao Firefox INDEPENDENTE de como
+# ele foi instalado (Kit, pool offline ou "sudo apt install firefox-esr").
 prova 5 "policies.json (telemetria off, DoH Quad9, uBlock)" bash -c '
   python3 -m json.tool firefox/policies.json >/dev/null &&
   grep -q "DisableTelemetry" firefox/policies.json &&
@@ -69,8 +72,11 @@ prova 5 "policies.json (telemetria off, DoH Quad9, uBlock)" bash -c '
   grep -q "dns.quad9.net" firefox/policies.json &&
   grep -q "uBlock0@raymondhill.net" firefox/policies.json &&
   grep -q "HTTPSOnlyMode" firefox/policies.json &&
-  grep -q "^firefox-esr-l10n-pt-br$" packages-lists/panthera-base.list &&
-  echo "policies + l10n-pt-br OK"'
+  ! grep -q "about:panthera-welcome" firefox/policies.json &&
+  grep -q "l10n-pt-br" kits/catalogo.json &&
+  grep -q "firefox-esr" kits/catalogo.json &&
+  grep -q "apt.hooks.d" hooks/live/0300-firefox.hook.chroot &&
+  echo "policies + entrega por hook do apt OK"'
 
 # 6. mount noexec (Secao 9 + I7): udisks monta /media sem exec
 prova 6 "usb noexec,nodev,nosuid" bash -c '

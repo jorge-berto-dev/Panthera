@@ -7,6 +7,10 @@
 [OK] sem CJK
 [OK] sem pacotes espiões na base
 == arquivos FASE 2-6 ==
+[OK] kits/catalogo.json
+[OK] scripts/panthera-catalogo.py
+[OK] scripts/panthera-firefox-policies.sh
+[OK] tests/test-kits.sh
 [OK] build-iso.sh
 [OK] packages-lists/panthera-base.list
 [OK] packages-lists/panthera-remove.list
@@ -39,11 +43,12 @@
 [OK] includes.chroot/etc/default/grub
 [OK] includes.chroot/etc/udisks2/mount_options.conf
 == hooks 0100-0600 ==
-[OK] 6 hooks
+[OK] 7 hooks
 [OK] hooks executaveis + sintaxe
 == configs ==
 [OK] policies.json valido
 [OK] policies sem telemetria
+[OK] ajuda offline nao depende de navegador especifico
 [OK] sysctl 12 chaves (amostra ptrace_scope)
 [OK] sudoers timeout 10
 [OK] build-iso.sh sintaxe
