@@ -144,8 +144,14 @@ tem "etc/apt/apt.hooks.d/90panthera-firefox" \
   || bad "hook do apt ausente: Firefox instalado na mao ficaria sem policies"
 tem "etc/skel/.config/gtk-3.0/settings.ini" \
   && ok "tema aplicado no skel (usuario instalado)" || bad "skel sem tema"
-tem "etc/skel/.config/xfce4/xfconf/xfce-perchannel-desktop/xfce4-desktop.xml" \
+tem "etc/skel/.config/xfce4/xfconf/xfce-perchannel-xml/xfce4-desktop.xml" \
   && ok "papel de parede aplicado no skel" || bad "skel sem papel de parede"
+tem "etc/skel/.config/xfce4/xfconf/xfce-perchannel-xml/xsettings.xml" \
+  && ok "xsettings.xml no skel (e o que o xfsettingsd le)" \
+  || bad "xsettings.xml ausente: o tema GTK nao aplica mesmo com settings.ini"
+grep "xfce-perchannel-desktop" hooks/live/0200-branding.hook.chroot | grep -v "versao anterior" | grep -v "ATT" >/dev/null \
+  && bad "hook 0200 ainda escreve em xfce-perchannel-desktop (path que o xfconfd ignora)" \
+  || ok "hook 0200 nao usa o path errado do xfconf"
 # O usuario do Live NAO existe no squashfs (/home vem vazio): o live-boot cria
 # ele no primeiro boot com "useradd -m", e o useradd copia o /etc/skel. Por isso
 # que o caminho certo do branding e o skel, e nao /home/user.
@@ -159,6 +165,29 @@ echo "== 6. bootloaders UEFI e Legacy (RF008) =="
 ISO_ARQ=$(xorriso -indev "$ISO" -find / -maxdepth 3 2>/dev/null)
 echo "$ISO_ARQ" | grep -q "grubx64.efi" && ok "UEFI presente" || bad "sem bootloader UEFI"
 echo "$ISO_ARQ" | grep -q "isolinux.bin" && ok "Legacy presente" || bad "sem bootloader Legacy"
+echo ""
+echo "== 6b. menu de boot Panthera com autoboot (que nem o Mint) =="
+T2=$(mktemp -d)
+xorriso -osirrox on -indev "$ISO" \
+  -extract /boot/grub/grub.cfg "$T2/grub.cfg" \
+  -extract /isolinux/isolinux.cfg "$T2/isolinux.cfg" \
+  -extract /boot/grub/themes/panthera/theme.txt "$T2/theme.txt" \
+  -extract /boot/grub/themes/panthera/background.png "$T2/background.png" >/dev/null 2>&1 || true
+[ -f "$T2/theme.txt" ] && ok "tema GRUB Panthera na ISO" || bad "tema GRUB ausente: boot com cara de Debian"
+[ -f "$T2/background.png" ] && ok "fundo do GRUB com a pantera" || bad "background.png do GRUB ausente"
+grep -q "^set timeout=5" "$T2/grub.cfg" 2>/dev/null \
+  && ok "GRUB inicia sozinho em 5s (sem ENTER)" \
+  || bad "GRUB sem autoboot: usuario tem que apertar ENTER"
+grep -q "Panthera" "$T2/grub.cfg" 2>/dev/null \
+  && ok "menu GRUB com a marca Panthera" \
+  || bad "menu GRUB ainda diz Debian"
+grep -qi "^TIMEOUT 50" "$T2/isolinux.cfg" 2>/dev/null \
+  && ok "Legacy inicia sozinho em 5s (sem ENTER)" \
+  || bad "isolinux sem autoboot: usuario tem que apertar ENTER"
+grep -qi "Panthera" "$T2/isolinux.cfg" 2>/dev/null \
+  && ok "menu Legacy com a marca Panthera" \
+  || bad "menu Legacy ainda diz Debian"
+rm -rf "$T2"
 
 echo ""
 echo "== 7. o log dos hooks nao tem aviso de fonte faltando =="

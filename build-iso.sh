@@ -29,6 +29,8 @@ if [ "$1" = "--check" ]; then
     [ -x "hooks/live/${h}.hook.chroot" ] && echo "[OK] hook $h executavel" || { echo "[FALTA] hook $h"; FAIL=1; }
     bash -n "hooks/live/${h}.hook.chroot" && echo "[OK] sintaxe $h" || { echo "[FALHA] sintaxe $h"; FAIL=1; }
   done
+  [ -x "hooks/live/0700-bootmenu.hook.binary" ] && echo "[OK] hook 0700-bootmenu binario executavel" || { echo "[FALTA] hook 0700-bootmenu"; FAIL=1; }
+  bash -n "hooks/live/0700-bootmenu.hook.binary" && echo "[OK] sintaxe 0700-bootmenu" || { echo "[FALHA] sintaxe 0700-bootmenu"; FAIL=1; }
   bash -n build-iso.sh && echo "[OK] sintaxe build-iso.sh"
   python3 -m json.tool firefox/policies.json >/dev/null && echo "[OK] policies.json valido" || { echo "[FALHA] policies.json"; FAIL=1; }
   [ -f firefox/distribution.ini ] && echo "[OK] distribution.ini"
@@ -80,6 +82,10 @@ cp packages-lists/panthera-base.list config/package-lists/panthera.list.chroot
 # FASE 2: entrega hooks 0100-0600 para o live-build (idempotente)
 cp hooks/live/*.hook.chroot config/hooks/live/
 chmod +x config/hooks/live/*.hook.chroot
+# Hook binario 0700-bootmenu: tema GRUB + autoboot 5s. Roda no host depois do
+# estagio binary; sem ele o menu e o do Debian parado esperando ENTER.
+cp hooks/live/*.hook.binary config/hooks/live/ 2>/dev/null || true
+chmod +x config/hooks/live/*.hook.binary 2>/dev/null || true
 # FASE 2: entrega includes (sysctl, sudoers, manifest, skel)
 cp -a includes.chroot/. config/includes.chroot/
 # FASE 2: disponibiliza fontes dos hooks dentro do chroot em /usr/share/panthera-src

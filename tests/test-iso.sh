@@ -25,10 +25,10 @@ for f in kits/catalogo.json scripts/panthera-catalogo.py scripts/panthera-firefo
   if [ -f "$f" ]; then echo "[OK] $f"; else echo "[FALTA] $f"; exit 1; fi
 done
 
-echo "== hooks 0100-0600 =="
+echo "== hooks 0100-0700 =="
 N=$(ls hooks/live/*.hook.chroot 2>/dev/null | wc -l)
 if [ "$N" -eq 7 ]; then echo "[OK] 7 hooks"; else echo "[FALHA] esperado 7 hooks (0250-pool entrou), achado $N"; exit 1; fi
-for h in hooks/live/*.hook.chroot; do
+for h in hooks/live/*.hook.chroot hooks/live/*.hook.binary; do
   [ -x "$h" ] || { echo "[FALHA] sem +x: $h"; exit 1; }
   bash -n "$h" || { echo "[FALHA] sintaxe: $h"; exit 1; }
 done

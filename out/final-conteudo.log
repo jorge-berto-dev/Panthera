@@ -1,5 +1,5 @@
 == 1. estatico: os hooks reprovam quando falta fonte ==
-[OK] 0200-branding tem 6 bloqueios de FALHA
+[OK] 0200-branding tem 8 bloqueios de FALHA
 [OK] 0300-firefox tem 5 bloqueios de FALHA
 == 2. estatico: as fontes NAO vao em includes.chroot/tmp ==
 [OK] fontes entregues em includes.chroot/usr/share

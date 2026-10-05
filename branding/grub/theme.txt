@@ -1,5 +1,8 @@
 # Panthera GRUB theme 1024x768 (ODT Secao 25.1 + 20.3)
 # Paleta oficial: fundo #0B111C texto #F3F6F9 selecao #1D83FF
+# NOTA: sem pixmaps e sem pf2 proprio de proposito. Se o theme.txt apontar para
+# arquivo que nao existe na ISO, o GRUB descarta o tema inteiro e cai no menu
+# texto. O fundo vem de background.png e a fonte cai para unicode.pf2.
 title-text: "Panthera"
 desktop-color: "#0B111C"
 desktop-image: "background.png"
@@ -14,5 +17,4 @@ title-color: "#F3F6F9"
   item_spacing = 8
   selected_item_color = "#1D83FF"
   item_color = "#F3F6F9"
-  selected_item_pixmap_style = "select_*.png"
 }

@@ -42,7 +42,7 @@
 [OK] includes.chroot/etc/security/limits.d/panthera.conf
 [OK] includes.chroot/etc/default/grub
 [OK] includes.chroot/etc/udisks2/mount_options.conf
-== hooks 0100-0600 ==
+== hooks 0100-0700 ==
 [OK] 7 hooks
 [OK] hooks executaveis + sintaxe
 == configs ==

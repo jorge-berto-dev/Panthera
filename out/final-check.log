@@ -16,6 +16,8 @@
 [OK] sintaxe 0500-calamares
 [OK] hook 0600-cleanup executavel
 [OK] sintaxe 0600-cleanup
+[OK] hook 0700-bootmenu binario executavel
+[OK] sintaxe 0700-bootmenu
 [OK] sintaxe build-iso.sh
 [OK] policies.json valido
 [OK] distribution.ini

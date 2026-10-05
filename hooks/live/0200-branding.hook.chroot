@@ -18,6 +18,10 @@ B="$SRC/branding"
 [ -f "$B/themes/Panthera/gtk.css" ] || { echo "[0200-branding] FALHA: falta gtk.css em $B" | tee -a /var/log/panthera-hooks.log; exit 1; }
 [ -f "$B/themes/Panthera/index.theme" ] || { echo "[0200-branding] FALHA: falta index.theme em $B (GTK3 ignora o tema)" | tee -a /var/log/panthera-hooks.log; exit 1; }
 [ -f "$B/wallpaper.svg" ] || { echo "[0200-branding] FALHA: falta wallpaper.svg em $B" | tee -a /var/log/panthera-hooks.log; exit 1; }
+# wallpaper.png e o asset oficial, gerado da identidade-visual.png (pantera +
+# slogan sobre fundo #0B111C). Commitado pronto para nao depender de renderizar
+# SVG no build: deterministico, sempre igual.
+[ -f "$B/wallpaper.png" ] || { echo "[0200-branding] FALHA: falta wallpaper.png em $B" | tee -a /var/log/panthera-hooks.log; exit 1; }
 
 # 1. Tema GTK Panthera (paleta oficial Secao 4.1)
 mkdir -p /usr/share/themes/Panthera/gtk-3.0 /usr/share/themes/Panthera
@@ -49,22 +53,26 @@ if [ -d "$B/icons/Panthera" ]; then
   gtk-update-icon-cache /usr/share/icons/Panthera 2>/dev/null || true
 fi
 
-# 3. Wallpaper oficial 1920x1080
+# 3. Wallpaper oficial 1920x1080 (pantera + slogan, da identidade-visual.png)
 mkdir -p /usr/share/backgrounds/panthera
 cp "$B/wallpaper.svg" /usr/share/backgrounds/panthera/wallpaper.svg
+cp "$B/wallpaper.png" /usr/share/backgrounds/panthera/wallpaper.png
+chmod 644 /usr/share/backgrounds/panthera/wallpaper.png
 
 # 4. GRUB 1024x768 (fundo #0B111C, selecao #1D83FF)
 mkdir -p /boot/grub/themes/panthera
 if [ -f "$B/grub/theme.txt" ]; then
   cp "$B/grub/theme.txt" /boot/grub/themes/panthera/theme.txt
 fi
-# GRUB nao le SVG: renderiza background.png a partir do wallpaper se possivel
-if command -v rsvg-convert >/dev/null 2>&1; then
+# background.png e commitado (gerado da identidade). O SVG e fallback.
+if [ -f "$B/boot/grub-background.png" ]; then
+  cp "$B/boot/grub-background.png" /boot/grub/themes/panthera/background.png
+elif command -v rsvg-convert >/dev/null 2>&1; then
   rsvg-convert -w 1024 -h 768 /usr/share/backgrounds/panthera/wallpaper.svg -o /boot/grub/themes/panthera/background.png 2>/dev/null || true
 elif command -v convert >/dev/null 2>&1; then
   convert /usr/share/backgrounds/panthera/wallpaper.svg -resize 1024x768! /boot/grub/themes/panthera/background.png 2>/dev/null || true
 else
-  echo "[0200-branding] sem rsvg/convert: GRUB usa desktop-color #0B111C" | tee -a /var/log/panthera-hooks.log
+  echo "[0200-branding] sem background.png e sem rsvg/convert: GRUB usa desktop-color #0B111C" | tee -a /var/log/panthera-hooks.log
 fi
 
 # 5. Plymouth (fundo #0B111C + barra #1D83FF)
@@ -75,14 +83,18 @@ fi
 if [ -f "$B/plymouth/panthera.script" ]; then
   cp "$B/plymouth/panthera.script" /usr/share/plymouth/themes/panthera/panthera.script
 fi
-# Logo 200px para o splash (renderiza se possivel)
-if [ -f "$B/icons/Panthera/logo.svg" ]; then
+# Logo da pantera para o splash (da identidade-visual.png, nao do placeholder).
+# O boot/panther-logo-300.png e commitado; o SVG antigo e fallback.
+if [ -f "$B/boot/panther-logo-300.png" ]; then
+  cp "$B/boot/panther-logo-300.png" /usr/share/plymouth/themes/panthera/logo.png
+elif [ -f "$B/icons/Panthera/logo.svg" ]; then
   if command -v rsvg-convert >/dev/null 2>&1; then
     rsvg-convert -w 200 -h 200 "$B/icons/Panthera/logo.svg" -o /usr/share/plymouth/themes/panthera/logo.png 2>/dev/null || true
   else
     cp "$B/icons/Panthera/logo.svg" /usr/share/plymouth/themes/panthera/logo.svg 2>/dev/null || true
   fi
 fi
+[ -f /usr/share/plymouth/themes/panthera/logo.png ] || { echo "[0200-branding] FALHA: sem logo.png para o Plymouth" | tee -a /var/log/panthera-hooks.log; exit 1; }
 if command -v plymouth-set-default-theme >/dev/null 2>&1; then
   plymouth-set-default-theme -R panthera 2>/dev/null || plymouth-set-default-theme panthera 2>/dev/null || true
 fi
@@ -114,6 +126,7 @@ echo "[0200-branding] OK tema+icones+grub+plymouth+greeter" | tee -a /var/log/pa
 #    nunca /usr ou /etc direto (RNF005).
 WALL_SVG=/usr/share/backgrounds/panthera/wallpaper.svg
 WALL_PNG=/usr/share/backgrounds/panthera/wallpaper.png
+# O PNG e commitado; so renderiza do SVG se alguem apagar o PNG no futuro.
 if [ ! -f "$WALL_PNG" ]; then
   if command -v rsvg-convert >/dev/null 2>&1 && [ -f "$WALL_SVG" ]; then
     rsvg-convert -w 1920 -h 1080 "$WALL_SVG" -o "$WALL_PNG" || true
@@ -144,7 +157,7 @@ EOF
 
 aplicar_home() {
   H="$1"
-  mkdir -p "$H/.config/gtk-3.0" "$H/.config/xfce4/xfconf/xfce-perchannel-desktop" "$H/.config/xfwm4"
+  mkdir -p "$H/.config/gtk-3.0" "$H/.config/xfce4/xfconf/xfce-perchannel-xml" "$H/.config/xfwm4"
   cat > "$H/.config/gtk-3.0/settings.ini" <<EOF
 [Settings]
 gtk-theme-name=Panthera
@@ -156,18 +169,45 @@ gtk-theme-name="Panthera"
 gtk-icon-theme-name="Panthera"
 gtk-font-name="Inter 10"
 EOF
-  cat > "$H/.config/xfce4/xfconf/xfce-perchannel-desktop/xfce4-desktop.xml" <<EOF
+  # ATENCAO: o diretorio certo e xfce-perchannel-xml. A versao anterior escrevia
+  # em xfce-perchannel-desktop, que o xfconfd ignora: por isso o papel de parede
+  # nunca aplicava e a ISO saia com o fundo padrao do Debian.
+  cat > "$H/.config/xfce4/xfconf/xfce-perchannel-xml/xfce4-desktop.xml" <<EOF
 <?xml version="1.0" encoding="UTF-8"?>
 <channel name="xfce4-desktop" version="1.0">
   <property name="backdrop" type="empty">
     <property name="screen0" type="empty">
-      <property name="workspace0" type="empty">
-        <property name="color-style" type="int" value="0"/>
-        <property name="color1" type="string" value="#0B111C"/>
-        <property name="image-style" type="int" value="2"/>
-        <property name="last-image" type="string" value="$WALL_PNG"/>
+      <property name="monitor0" type="empty">
+        <property name="workspace0" type="empty">
+          <property name="color-style" type="int" value="0"/>
+          <property name="color1" type="string" value="#0B111C"/>
+          <property name="image-style" type="int" value="2"/>
+          <property name="last-image" type="string" value="$WALL_PNG"/>
+        </property>
       </property>
     </property>
+  </property>
+</channel>
+EOF
+  # O xfsettingsd (que roda em toda sessao XFCE) le o tema DESTE canal e
+  # sobrescreve o settings.ini via XSETTINGS. Sem este arquivo, o settings.ini
+  # sozinho nao adianta: a janela abria branca com o tema padrao.
+  cat > "$H/.config/xfce4/xfconf/xfce-perchannel-xml/xsettings.xml" <<EOF
+<?xml version="1.0" encoding="UTF-8"?>
+<channel name="xsettings" version="1.0">
+  <property name="Net" type="empty">
+    <property name="ThemeName" type="string" value="Panthera"/>
+    <property name="IconThemeName" type="string" value="Panthera"/>
+  </property>
+  <property name="Gtk" type="empty">
+    <property name="FontName" type="string" value="Inter 10"/>
+    <property name="CursorThemeName" type="string" value="Adwaita"/>
+  </property>
+  <property name="Xft" type="empty">
+    <property name="Antialias" type="int" value="1"/>
+    <property name="Hinting" type="int" value="1"/>
+    <property name="HintStyle" type="string" value="hintslight"/>
+    <property name="RGBA" type="string" value="rgb"/>
   </property>
 </channel>
 EOF

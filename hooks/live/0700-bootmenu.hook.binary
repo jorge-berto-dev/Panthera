@@ -1,0 +1,99 @@
+#!/bin/bash
+# hooks/live/0700-bootmenu.hook.binary - menu de boot Panthera + autoboot
+# Roda no HOST, DEPOIS do estagio binary, ANTES de gerar a ISO.
+# (hook .binary enxerga a pasta binary/; hook .chroot nao enxerga.)
+#
+# O que faz, e por que existe:
+#  1. AUTOBOOT. O live-build gera o menu parado esperando ENTER para sempre.
+#     Que nem o Mint: mostra o menu, conta 5 segundos e inicia sozinho.
+#  2. TEMA GRUB. O hook 0200 instala o tema em /boot/grub/themes/panthera DENTRO
+#     do chroot, mas o grub.cfg da ISO e gerado pelo live-build sem nenhuma
+#     referencia a ele. Sem este hook, o boot mostra o menu padrao do Debian.
+#  3. MARCA. Troca "Debian GNU/Linux" por "Panthera" nos titulos do menu.
+#
+# Se nao achar NENHUM config de bootloader, REPROVA: menu sem marca e sem
+# autoboot e exatamente o que a v1.1.8 entregou.
+set -e
+LOG="binary/bootmenu-panthera.log"
+mkdir -p binary
+echo "[0700-bootmenu] $(date -u +%Y-%m-%dT%H:%M:%SZ) inicio" | tee "$LOG"
+ACHOU=0
+
+# ---------- Legacy: syslinux/isolinux ----------
+for CFG in binary/isolinux/isolinux.cfg binary/isolinux/live.cfg binary/isolinux/menu.cfg; do
+  [ -f "$CFG" ] || continue
+  ACHOU=1
+  cp "$CFG" "$CFG.panthera-bak"
+  # TIMEOUT em decimos de segundo: 50 = 5s, que nem o Mint
+  if grep -qi "^TIMEOUT" "$CFG"; then
+    sed -i -E 's/^TIMEOUT.*/TIMEOUT 50/i' "$CFG"
+  else
+    printf '\nTIMEOUT 50\n' >> "$CFG"
+  fi
+  # titulo do menu
+  if grep -qi "^MENU TITLE" "$CFG"; then
+    sed -i -E 's/^MENU TITLE.*/MENU TITLE Panthera - LIBERDADE PARA O SEU MUNDO/i' "$CFG"
+  fi
+  echo "[0700-bootmenu] syslinux autoboot 5s em $CFG" | tee -a "$LOG"
+done
+for CFG in binary/isolinux/live.cfg binary/isolinux/live.cfg.in; do
+  [ -f "$CFG" ] || continue
+  sed -i 's/Debian GNU\/Linux/Panthera/g' "$CFG"
+  echo "[0700-bootmenu] marca Panthera em $CFG" | tee -a "$LOG"
+done
+
+# ---------- UEFI: GRUB ----------
+GRUBCFG="binary/boot/grub/grub.cfg"
+if [ -f "$GRUBCFG" ]; then
+  ACHOU=1
+  cp "$GRUBCFG" "$GRUBCFG.panthera-bak"
+  # tema Panthera (fundo pantera 1024x768, selecao #1D83FF)
+  mkdir -p binary/boot/grub/themes/panthera
+  SRC=""
+  [ -d config/includes.chroot/usr/share/panthera-src/branding ] && SRC="config/includes.chroot/usr/share/panthera-src/branding"
+  [ -d branding ] && [ -z "$SRC" ] && SRC="branding"
+  if [ -n "$SRC" ]; then
+    [ -f "$SRC/grub/theme.txt" ] && cp "$SRC/grub/theme.txt" binary/boot/grub/themes/panthera/theme.txt
+    [ -f "$SRC/boot/grub-background.png" ] && cp "$SRC/boot/grub-background.png" binary/boot/grub/themes/panthera/background.png
+  fi
+  # fontes do GRUB para o tema (sem unicode.pf2 o tema nao carrega e cai no texto)
+  for PF2 in /usr/share/grub/unicode.pf2 /usr/lib/grub/i386-pc/unicode.pf2; do
+    if [ -f "$PF2" ]; then
+      mkdir -p binary/boot/grub/fonts
+      cp "$PF2" binary/boot/grub/fonts/unicode.pf2 2>/dev/null || true
+      break
+    fi
+  done
+  # timeout: mostra o menu 5s e inicia sozinho
+  if grep -q "^set timeout=" "$GRUBCFG"; then
+    sed -i -E 's/^set timeout=.*/set timeout=5/' "$GRUBCFG"
+  else
+    printf '\nset timeout=5\n' >> "$GRUBCFG"
+  fi
+  if grep -q "^set default=" "$GRUBCFG"; then
+    sed -i -E 's/^set default=.*/set default=0/' "$GRUBCFG"
+  fi
+  # carrega o tema logo apos o gfxmode, se o tema existir de verdade
+  if [ -f binary/boot/grub/themes/panthera/theme.txt ] && [ -f binary/boot/grub/themes/panthera/background.png ]; then
+    if ! grep -q "themes/panthera/theme.txt" "$GRUBCFG"; then
+      # insere UMA vez, depois da linha do terminal grafico (a primeira ocorrencia)
+      awk '
+        !feito && /terminal_output gfxterm/ { print; print "insmod png"; print "insmod jpeg"; print "loadfont ($root)/boot/grub/fonts/unicode.pf2"; print "set theme=($root)/boot/grub/themes/panthera/theme.txt"; print "background_image ($root)/boot/grub/themes/panthera/background.png"; feito=1; next }
+        { print }
+      ' "$GRUBCFG" > "$GRUBCFG.new" && mv "$GRUBCFG.new" "$GRUBCFG"
+    fi
+    echo "[0700-bootmenu] GRUB com tema Panthera + autoboot 5s" | tee -a "$LOG"
+  else
+    echo "[0700-bootmenu] AVISO: tema GRUB incompleto, so autoboot aplicado" | tee -a "$LOG"
+  fi
+  # marca nos titulos das entradas (nunca nos parametros do kernel): troca o
+  # nome inteiro "Debian GNU/Linux ..." por "Panthera ..."
+  sed -i -E "s/'Debian GNU\/Linux([^']*)'/'Panthera\1'/" "$GRUBCFG"
+  grep -c "Panthera" "$GRUBCFG" | xargs echo "[0700-bootmenu] ocorrencias de Panthera no grub.cfg:"
+fi
+
+if [ "$ACHOU" -eq 0 ]; then
+  echo "[0700-bootmenu] FALHA: nenhum config de bootloader em binary/ (nem isolinux, nem grub)" | tee -a "$LOG"
+  exit 1
+fi
+echo "[0700-bootmenu] OK" | tee -a "$LOG"
