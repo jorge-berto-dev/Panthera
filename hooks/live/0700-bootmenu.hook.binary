@@ -14,13 +14,31 @@
 # Se nao achar NENHUM config de bootloader, REPROVA: menu sem marca e sem
 # autoboot e exatamente o que a v1.1.8 entregou.
 set -e
-LOG="binary/bootmenu-panthera.log"
-mkdir -p binary
-echo "[0700-bootmenu] $(date -u +%Y-%m-%dT%H:%M:%SZ) inicio" | tee "$LOG"
+# Ancoragem: hook binario pode rodar com CWD diferente da raiz do projeto
+# (na v1.2.0 o CWD nao tinha binary/ e o hook reprovou sem achar nada).
+# A raiz e sempre 3 niveis acima deste arquivo: config/hooks/live/xxxx.
+ROOT="$(cd "$(dirname "$0")/../../.." 2>/dev/null && pwd)"
+if [ -z "$ROOT" ] || [ ! -d "$ROOT/binary" ]; then
+  # fallback: procura binary/ para cima a partir do CWD
+  D="$PWD"
+  while [ "$D" != "/" ]; do
+    if [ -d "$D/binary" ]; then ROOT="$D"; break; fi
+    D="$(dirname "$D")"
+  done
+fi
+LOG="$ROOT/binary/bootmenu-panthera.log"
+mkdir -p "$ROOT/binary"
+{
+  echo "[0700-bootmenu] $(date -u +%Y-%m-%dT%H:%M:%SZ) inicio"
+  echo "[0700-bootmenu] CWD=$(pwd) ROOT=$ROOT hook=$0"
+  echo "[0700-bootmenu] conteudo de binary/:"
+  find "$ROOT/binary" -maxdepth 2 2>/dev/null | head -30
+} | tee "$LOG"
+BIN="$ROOT/binary"
 ACHOU=0
 
 # ---------- Legacy: syslinux/isolinux ----------
-for CFG in binary/isolinux/isolinux.cfg binary/isolinux/live.cfg binary/isolinux/menu.cfg; do
+for CFG in "$BIN/isolinux/isolinux.cfg" "$BIN/isolinux/live.cfg" "$BIN/isolinux/menu.cfg"; do
   [ -f "$CFG" ] || continue
   ACHOU=1
   cp "$CFG" "$CFG.panthera-bak"
@@ -36,31 +54,31 @@ for CFG in binary/isolinux/isolinux.cfg binary/isolinux/live.cfg binary/isolinux
   fi
   echo "[0700-bootmenu] syslinux autoboot 5s em $CFG" | tee -a "$LOG"
 done
-for CFG in binary/isolinux/live.cfg binary/isolinux/live.cfg.in; do
+for CFG in "$BIN/isolinux/live.cfg" "$BIN/isolinux/live.cfg.in"; do
   [ -f "$CFG" ] || continue
   sed -i 's/Debian GNU\/Linux/Panthera/g' "$CFG"
   echo "[0700-bootmenu] marca Panthera em $CFG" | tee -a "$LOG"
 done
 
 # ---------- UEFI: GRUB ----------
-GRUBCFG="binary/boot/grub/grub.cfg"
+GRUBCFG="$BIN/boot/grub/grub.cfg"
 if [ -f "$GRUBCFG" ]; then
   ACHOU=1
   cp "$GRUBCFG" "$GRUBCFG.panthera-bak"
   # tema Panthera (fundo pantera 1024x768, selecao #1D83FF)
-  mkdir -p binary/boot/grub/themes/panthera
+  mkdir -p "$BIN/boot/grub/themes/panthera"
   SRC=""
-  [ -d config/includes.chroot/usr/share/panthera-src/branding ] && SRC="config/includes.chroot/usr/share/panthera-src/branding"
-  [ -d branding ] && [ -z "$SRC" ] && SRC="branding"
+  [ -d "$ROOT/config/includes.chroot/usr/share/panthera-src/branding" ] && SRC="$ROOT/config/includes.chroot/usr/share/panthera-src/branding"
+  [ -d "$ROOT/branding" ] && [ -z "$SRC" ] && SRC="$ROOT/branding"
   if [ -n "$SRC" ]; then
-    [ -f "$SRC/grub/theme.txt" ] && cp "$SRC/grub/theme.txt" binary/boot/grub/themes/panthera/theme.txt
-    [ -f "$SRC/boot/grub-background.png" ] && cp "$SRC/boot/grub-background.png" binary/boot/grub/themes/panthera/background.png
+    [ -f "$SRC/grub/theme.txt" ] && cp "$SRC/grub/theme.txt" "$BIN/boot/grub/themes/panthera/theme.txt"
+    [ -f "$SRC/boot/grub-background.png" ] && cp "$SRC/boot/grub-background.png" "$BIN/boot/grub/themes/panthera/background.png"
   fi
   # fontes do GRUB para o tema (sem unicode.pf2 o tema nao carrega e cai no texto)
   for PF2 in /usr/share/grub/unicode.pf2 /usr/lib/grub/i386-pc/unicode.pf2; do
     if [ -f "$PF2" ]; then
-      mkdir -p binary/boot/grub/fonts
-      cp "$PF2" binary/boot/grub/fonts/unicode.pf2 2>/dev/null || true
+      mkdir -p "$BIN/boot/grub/fonts"
+      cp "$PF2" "$BIN/boot/grub/fonts/unicode.pf2" 2>/dev/null || true
       break
     fi
   done
@@ -74,7 +92,7 @@ if [ -f "$GRUBCFG" ]; then
     sed -i -E 's/^set default=.*/set default=0/' "$GRUBCFG"
   fi
   # carrega o tema logo apos o gfxmode, se o tema existir de verdade
-  if [ -f binary/boot/grub/themes/panthera/theme.txt ] && [ -f binary/boot/grub/themes/panthera/background.png ]; then
+  if [ -f "$BIN/boot/grub/themes/panthera/theme.txt" ] && [ -f "$BIN/boot/grub/themes/panthera/background.png" ]; then
     if ! grep -q "themes/panthera/theme.txt" "$GRUBCFG"; then
       # insere UMA vez, depois da linha do terminal grafico (a primeira ocorrencia)
       awk '
