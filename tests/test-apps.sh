@@ -8,7 +8,7 @@ ok() { echo "[OK] $1"; }
 bad() { echo "[FALHA] $1"; FAIL=1; }
 
 echo "== 1. COMPILE-OK (Secao 26.1) =="
-for app in panthera-central panthera-store panthera-updater panthera-welcome panthera-theme-check panthera-catalogo panthera-monitor panthera-limpeza; do
+for app in panthera-central panthera-store panthera-updater panthera-welcome panthera-theme-check panthera-catalogo panthera-monitor panthera-limpeza panthera-aparencia; do
   python3 -m py_compile "scripts/${app}.py" && ok "compile $app" || bad "compile $app"
 done
 for shf in scripts/panthera-doctor.sh scripts/panthera-codecs.sh scripts/panthera-superleve.sh scripts/check-wayland.sh; do
@@ -16,7 +16,7 @@ for shf in scripts/panthera-doctor.sh scripts/panthera-codecs.sh scripts/panther
 done
 
 echo "== 2. --help sem display =="
-for app in panthera-central panthera-store panthera-updater panthera-welcome panthera-monitor panthera-limpeza; do
+for app in panthera-central panthera-store panthera-updater panthera-welcome panthera-monitor panthera-limpeza panthera-aparencia; do
   python3 "scripts/${app}.py" --help >/dev/null 2>&1 && ok "$app --help" || bad "$app --help"
 done
 # --meus-kits do Bem-vindo: prova que ele le o catalogo de verdade
@@ -46,7 +46,7 @@ print('clicked sempre via wrapper com try')
 echo "== 5. So stdlib + GTK3 (R6) =="
 python3 -c "
 import ast, glob
-permit = {'gi', 'subprocess', 'os', 'json', 'sys', 'zipfile', 'shutil', 'time', 'shlex', 're', 'catalogo', 'importlib'}
+permit = {'gi', 'subprocess', 'os', 'json', 'sys', 'zipfile', 'shutil', 'time', 'shlex', 're', 'catalogo', 'importlib', 'xml', 'zipfile'}
 for f in glob.glob('scripts/panthera-*.py'):
     tree = ast.parse(open(f).read())
     for n in ast.walk(tree):
@@ -92,12 +92,13 @@ for f, exe in [('includes.chroot/usr/share/applications/panthera-central.desktop
                ('includes.chroot/usr/share/applications/panthera-store.desktop', '/usr/bin/panthera-store'),
                ('includes.chroot/usr/share/applications/panthera-updater.desktop', '/usr/bin/panthera-updater'),
                ('includes.chroot/usr/share/applications/panthera-monitor.desktop', '/usr/bin/panthera-monitor'),
-               ('includes.chroot/usr/share/applications/panthera-limpeza.desktop', '/usr/bin/panthera-limpeza')]:
+               ('includes.chroot/usr/share/applications/panthera-limpeza.desktop', '/usr/bin/panthera-limpeza'),
+               ('includes.chroot/usr/share/applications/panthera-aparencia.desktop', '/usr/bin/panthera-aparencia')]:
     c = configparser.ConfigParser(interpolation=None)
     assert c.read(f), f
     assert c['Desktop Entry']['Exec'] == exe, f
     print('OK', f)
-" && ok "5 desktop Exec" || bad "5 desktop Exec"
+" && ok "6 desktop Exec" || bad "6 desktop Exec"
 grep -q "Exec=/usr/bin/panthera-welcome.py" includes.chroot/etc/xdg/autostart/panthera-welcome.desktop && ok "autostart welcome" || bad "autostart welcome"
 
 echo "== 10. staging usr/bin (build-iso.sh) =="
@@ -113,10 +114,11 @@ cp scripts/panthera-superleve.sh /tmp/panthera-fase6-staging/usr/bin/panthera-su
 cp scripts/check-wayland.sh /tmp/panthera-fase6-staging/usr/bin/panthera-check-wayland
 cp scripts/panthera-monitor.py /tmp/panthera-fase6-staging/usr/bin/panthera-monitor
 cp scripts/panthera-limpeza.py /tmp/panthera-fase6-staging/usr/bin/panthera-limpeza
+cp scripts/panthera-aparencia.py /tmp/panthera-fase6-staging/usr/bin/panthera-aparencia
 cp scripts/panthera-firefox-policies.sh /tmp/panthera-fase6-staging/usr/bin/panthera-firefox-policies
 chmod +x /tmp/panthera-fase6-staging/usr/bin/panthera-*
 N=$(ls /tmp/panthera-fase6-staging/usr/bin/ | wc -l)
-[ "$N" -eq 12 ] && ok "12 apps em /usr/bin" || bad "12 apps em /usr/bin (achado $N)"
+[ "$N" -eq 13 ] && ok "13 apps em /usr/bin" || bad "13 apps em /usr/bin (achado $N)"
 grep -q "config/includes.chroot/usr/bin/panthera-central" build-iso.sh && ok "build-iso.sh entrega apps" || bad "build-iso.sh entrega apps"
 
 if [ "$FAIL" -ne 0 ]; then echo "APPS FALHOU"; exit 1; fi

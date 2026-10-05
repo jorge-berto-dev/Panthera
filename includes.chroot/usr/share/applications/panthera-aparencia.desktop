@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=Aparência Panthera
+Comment=Troca o tema e o papel de parede, validando antes.
+Exec=/usr/bin/panthera-aparencia
+Icon=preferences-desktop-theme
+Terminal=false
+Type=Application
+Categories=Settings;DesktopSettings;
+Keywords=aparencia;tema;papel;parede;fundo;
