@@ -42,15 +42,25 @@ def tamanho_pasta(caminho):
     return total
 
 
-def tamanho_comando(argv):
-    """Bytes via du, ou 0 quando o comando falha."""
+def tamanho_journal():
+    """Bytes que o journal ocupa, lendo o proprio journalctl. 0 sem journal."""
+    import re
     try:
-        r = subprocess.run(argv + ["-sb"], capture_output=True, text=True, timeout=20)
-        if r.returncode == 0:
-            return int(r.stdout.split()[0])
-    except (OSError, ValueError, IndexError, subprocess.TimeoutExpired):
-        pass
-    return 0
+        r = subprocess.run(["journalctl", "--disk-usage"],
+                           capture_output=True, text=True, timeout=15)
+        if r.returncode != 0:
+            return 0
+        # "Archived and active journals take up 730.6M in the file system."
+        # Numero e unidade vem grudados: separa com regex em vez de split.
+        m = re.search(r"take up ([0-9.]+)\s*([KMGT]?B?)", r.stdout, re.IGNORECASE)
+        if not m:
+            return 0
+        mult = {"B": 1, "K": 1024, "KB": 1024, "M": 1024 ** 2, "MB": 1024 ** 2,
+                "G": 1024 ** 3, "GB": 1024 ** 3, "T": 1024 ** 4, "TB": 1024 ** 4,
+                "": 1}.get(m.group(2).upper(), 1)
+        return int(float(m.group(1)) * mult)
+    except (OSError, subprocess.TimeoutExpired, ValueError):
+        return 0
 
 
 def tamanho_humano(n):
@@ -81,7 +91,7 @@ def categorias():
          ["apt-get clean"], tamanho_pasta("/var/cache/apt/archives")),
         ("journal", "Registros antigos do sistema",
          "Diario de bordo com mais de 7 dias. O sistema continua registrando normal depois.",
-         ["journalctl --vacuum-time=7d"], 0),
+         ["journalctl --vacuum-time=7d"], tamanho_journal()),
         ("lixeira", "Lixeira",
          "Arquivos que voce ja jogou fora. Apagar daqui nao tem volta.",
          [], tamanho_pasta(os.path.join(casa, ".local/share/Trash"))),

@@ -23,20 +23,19 @@ def ler_tempos_cpu():
     return ocioso, sum(numeros)
 
 
-def uso_cpu_percentual(antes=None):
-    """Percentual desde a ultima chamada. Na primeira, mede em 0.5s."""
-    o1, t1 = ler_tempos_cpu()
-    if antes is None:
-        time.sleep(0.5)
-        o2, t2 = ler_tempos_cpu()
-    else:
-        o2, t2 = antes
-        o1, t1 = o2, t2
-        time.sleep(0.2)
-        o2, t2 = ler_tempos_cpu()
-    if t2 == t1:
-        return 0.0
-    return max(0.0, min(100.0, (1.0 - (o2 - o1) / (t2 - t1)) * 100.0))
+def ler_tempos_processos():
+    """Tempos de CPU por pid, para comparar entre duas leituras."""
+    tempos = {}
+    for pid in os.listdir("/proc"):
+        if not pid.isdigit():
+            continue
+        try:
+            with open("/proc/%s/stat" % pid, encoding="utf-8") as f:
+                campos = f.read().rsplit(")", 1)[1].split()
+            tempos[int(pid)] = int(campos[11]) + int(campos[12])
+        except (OSError, ValueError, IndexError):
+            continue
+    return tempos
 
 
 def ler_memoria():
@@ -108,39 +107,30 @@ def ler_total_cpu():
         return sum(int(x) for x in f.readline().split()[1:])
 
 
-def top_processos(n=5):
-    """Os n processos que mais CPU usam, lendo /proc. (nome, pid, %cpu)."""
-    antes = {}
-    for pid in os.listdir("/proc"):
-        if not pid.isdigit():
-            continue
-        try:
-            with open("/proc/%s/stat" % pid, encoding="utf-8") as f:
-                campos = f.read().rsplit(")", 1)[1].split()
-            antes[int(pid)] = int(campos[11]) + int(campos[12])
-        except (OSError, ValueError, IndexError):
-            continue
-    total_antes = ler_total_cpu()
-    time.sleep(0.4)
+def top_processos(antes, total_antes, n=5):
+    """Os n que mais CPU usaram desde a amostragem anterior.
+    Sem sleep: quem chama guarda a amostra e compara no refresh seguinte, entao
+    a interface nunca trava esperando. Na primeira chamada nao ha base de
+    comparacao e devolve lista vazia."""
+    if not antes:
+        return []
     total_depois = ler_total_cpu()
     delta_total = max(1, total_depois - total_antes)
     ncpu = os.cpu_count() or 1
+    agora = ler_tempos_processos()
     saida = []
     for pid, t0 in antes.items():
+        t1 = agora.get(pid)
+        if t1 is None or t1 <= t0:
+            continue
         try:
-            with open("/proc/%s/stat" % pid, encoding="utf-8") as f:
-                campos = f.read().rsplit(")", 1)[1].split()
-            t1 = int(campos[11]) + int(campos[12])
-            delta = t1 - t0
-            if delta <= 0:
-                continue
             with open("/proc/%s/comm" % pid, encoding="utf-8") as f:
                 nome = f.read().strip()
-            pct = delta / delta_total * 100.0 * ncpu
-            if pct > 0.5:
-                saida.append((nome, pid, pct))
-        except (OSError, ValueError, IndexError):
+        except (OSError, ValueError):
             continue
+        pct = (t1 - t0) / delta_total * 100.0 * ncpu
+        if pct > 0.5:
+            saida.append((nome, pid, pct))
     saida.sort(key=lambda x: x[2], reverse=True)
     return saida[:n]
 
@@ -155,6 +145,10 @@ class Monitor(Gtk.Window):
         super().__init__(title="Monitor Panthera")
         self.set_default_size(520, 480)
         self._cpu_antes = None
+        # Amostras para o proximo refresh: sem elas, top_processos precisaria
+        # dormir para medir, e dormir na thread da interface trava a janela.
+        self._proc_antes = {}
+        self._total_antes = 0
         v = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
         v.set_border_width(14)
         self.add(v)
@@ -229,10 +223,14 @@ class Monitor(Gtk.Window):
 
             for filho in list(self.lista.get_children()):
                 self.lista.remove(filho)
-            for nome, pid, pct in top_processos():
+            for nome, pid, pct in top_processos(self._proc_antes, self._total_antes):
                 linha = Gtk.Label(label="%s  (pid %d): %.0f%%" % (nome, pid, pct))
                 linha.set_xalign(0)
                 self.lista.add(linha)
+            if not self._proc_antes:
+                self.lista.add(Gtk.Label(label="medindo... (aparece no próximo ciclo)"))
+            self._proc_antes = ler_tempos_processos()
+            self._total_antes = ler_total_cpu()
             self.lista.show_all()
         except Exception as e:
             print("Erro tratado ao atualizar: %s" % e)

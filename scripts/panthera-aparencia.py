@@ -250,18 +250,20 @@ class Aparencia(Gtk.Window):
             caixa.pack_start(Gtk.Label(label="Nenhum tema encontrado em %s" % DIR_TEMAS), False, False, 0)
             return caixa
         primeiro = None
+        atual, _papel = ler_conf_atual()
         for nome in bons:
             botao = Gtk.RadioButton(group=primeiro) if primeiro else Gtk.RadioButton()
             if primeiro is None:
                 primeiro = botao
-            botao.connect("toggled", lambda _w, n=nome: self.safe(self._marca_tema, n))
+            botao.connect("toggled", lambda _w, n=nome: self.safe(self._marca_tema, _w, n))
             linha = Gtk.Box(spacing=8)
             linha.pack_start(botao, False, False, 0)
-            texto = Gtk.Label(label=nome)
+            texto = Gtk.Label(label=nome + ("  (em uso)" if nome == atual else ""))
             texto.set_xalign(0)
             linha.pack_start(texto, True, True, 0)
             caixa.pack_start(linha, False, False, 0)
-            if nome == "Panthera":
+            # Marca o que esta em uso de verdade; Panthera so quando nada esta.
+            if nome == (atual if atual in bons else "Panthera"):
                 botao.set_active(True)
                 self.tema_escolhido = nome
         for nome, motivo in quebrados:
@@ -272,8 +274,10 @@ class Aparencia(Gtk.Window):
             caixa.pack_start(linha, False, False, 0)
         return caixa
 
-    def _marca_tema(self, _botao, nome):
-        self.tema_escolhido = nome
+    def _marca_tema(self, botao, nome):
+        # toggled dispara ao marcar E ao desmarcar: so vale o marcar.
+        if botao.get_active():
+            self.tema_escolhido = nome
 
     def _secao_papel(self):
         caixa = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
@@ -300,8 +304,9 @@ class Aparencia(Gtk.Window):
             caixa.pack_start(linha, False, False, 0)
         return caixa
 
-    def _marca_papel(self, _botao, caminho):
-        self.papel_escolhido = caminho
+    def _marca_papel(self, botao, caminho):
+        if botao.get_active():
+            self.papel_escolhido = caminho
 
     def _aplicar(self):
         mensagens = []

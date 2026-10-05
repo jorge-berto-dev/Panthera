@@ -174,6 +174,14 @@ class Drivers(Gtk.Window):
             v.pack_start(Gtk.Label(label="Não consegui ler o hardware (lspci ausente ou falhou). Veja %s" % LOG), False, False, 0)
             return
 
+        # 19 pecas nao cabem em 520px: a lista rola e os botoes ficam visiveis
+        rolagem = Gtk.ScrolledWindow()
+        rolagem.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
+        rolagem.set_min_content_height(300)
+        v.pack_start(rolagem, True, True, 0)
+        lista = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
+        rolagem.add(lista)
+
         for peca in self.pecas:
             estado, pacote, detalhe = avaliar(peca)
             linha = Gtk.Box(spacing=8)
@@ -194,7 +202,23 @@ class Drivers(Gtk.Window):
                 botao = Gtk.Button(label="Instalar")
                 botao.connect("clicked", lambda _w, p=pacote, t=estado, n=peca["nome"]: self.safe(self._instalar_um, p, t, n))
                 linha.pack_start(botao, False, False, 0)
-            v.pack_start(linha, False, False, 0)
+            lista.pack_start(linha, False, False, 0)
+
+        rc_usb, saida_usb = rodar(["lsusb"])
+        usbs = parse_lsusb(saida_usb) if rc_usb == 0 else []
+        # So o que interessa ao usuario: camera, bluetooth, leitor, impressora.
+        # Hubs raiz e fios internos sao ruido e ficam de fora.
+        uteis = [u for u in usbs if not re.search(
+            r"root hub|Linux Foundation|Intel Corp\.$|Host Controller", u["nome"])]
+        if uteis:
+            rot_usb = Gtk.Label()
+            rot_usb.set_markup("<b>USB conectado</b> (só informação, sem ação)")
+            rot_usb.set_xalign(0)
+            v.pack_start(rot_usb, False, False, 0)
+            for u in uteis:
+                texto = Gtk.Label(label="• %s" % u["nome"][:70])
+                texto.set_xalign(0)
+                v.pack_start(texto, False, False, 0)
 
         faltam = faltando_firmware(self.pecas)
         if faltam:
