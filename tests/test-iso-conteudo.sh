@@ -149,7 +149,7 @@ tem "etc/skel/.config/xfce4/xfconf/xfce-perchannel-xml/xfce4-desktop.xml" \
 tem "etc/skel/.config/xfce4/xfconf/xfce-perchannel-xml/xsettings.xml" \
   && ok "xsettings.xml no skel (e o que o xfsettingsd le)" \
   || bad "xsettings.xml ausente: o tema GTK nao aplica mesmo com settings.ini"
-grep "xfce-perchannel-desktop" hooks/live/0200-branding.hook.chroot | grep -v "versao anterior" | grep -v "ATT" >/dev/null \
+grep -v "^[[:space:]]*#" hooks/live/0200-branding.hook.chroot | grep "xfce-perchannel-desktop" >/dev/null \
   && bad "hook 0200 ainda escreve em xfce-perchannel-desktop (path que o xfconfd ignora)" \
   || ok "hook 0200 nao usa o path errado do xfconf"
 # O usuario do Live NAO existe no squashfs (/home vem vazio): o live-boot cria

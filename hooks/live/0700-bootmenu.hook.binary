@@ -48,9 +48,11 @@ for CFG in "$BIN/isolinux/isolinux.cfg" "$BIN/isolinux/live.cfg" "$BIN/isolinux/
   else
     printf '\nTIMEOUT 50\n' >> "$CFG"
   fi
-  # titulo do menu
+  # titulo do menu (cria se nao existir: o TITLE pode morar em outro .cfg)
   if grep -qi "^MENU TITLE" "$CFG"; then
     sed -i -E 's/^MENU TITLE.*/MENU TITLE Panthera - LIBERDADE PARA O SEU MUNDO/i' "$CFG"
+  else
+    printf 'MENU TITLE Panthera - LIBERDADE PARA O SEU MUNDO\n' >> "$CFG"
   fi
   echo "[0700-bootmenu] syslinux autoboot 5s em $CFG" | tee -a "$LOG"
 done
@@ -105,8 +107,10 @@ if [ -f "$GRUBCFG" ]; then
     echo "[0700-bootmenu] AVISO: tema GRUB incompleto, so autoboot aplicado" | tee -a "$LOG"
   fi
   # marca nos titulos das entradas (nunca nos parametros do kernel): troca o
-  # nome inteiro "Debian GNU/Linux ..." por "Panthera ..."
+  # nome inteiro por "Panthera ...". O live-build usa 'simples' ou "duplas"
+  # conforme a versao: trata as duas, senao a marca nao pega e ninguem avisa.
   sed -i -E "s/'Debian GNU\/Linux([^']*)'/'Panthera\1'/" "$GRUBCFG"
+  sed -i -E 's/"Debian GNU\/Linux([^"]*)"/"Panthera\1"/' "$GRUBCFG"
   grep -c "Panthera" "$GRUBCFG" | xargs echo "[0700-bootmenu] ocorrencias de Panthera no grub.cfg:"
 fi
 
