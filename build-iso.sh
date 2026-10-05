@@ -137,10 +137,31 @@ lb build
 # com o menu Debian parado esperando ENTER, como a v1.1.8. O syslinux ja foi
 # corrigido pelo hook 0700; aqui vai o GRUB, e o lb binary_iso reconstrói a ISO
 # a partir do binary/ ja corrigido.
+# SEM "| tee" direto no lb: o status do pipeline e o do tee, e falha do lb
+# seria engolida (foi assim que a v1.2.5 publicou a ISO sem o patch do GRUB).
+# Usa PIPESTATUS e ainda confere pelo relogio que a ISO saiu do rebuild.
 if [ -f scripts/panthera-grub-patch.sh ] && [ -f binary/boot/grub/grub.cfg ]; then
   bash scripts/panthera-grub-patch.sh binary branding 2>&1 | tee -a "$LOG"
   echo "[Panthera] reconstruindo a ISO com o boot corrigido (lb binary_iso)" | tee -a "$LOG"
+  MARCO=$(date +%s)
   lb binary_iso 2>&1 | tee -a "$LOG"
+  RC=${PIPESTATUS[0]}
+  [ "$RC" -eq 0 ] || { echo "[Panthera] FALHA: lb binary_iso saiu com codigo $RC" | tee -a "$LOG"; exit 3; }
+  NOVA=""
+  for C in live-image-amd64.hybrid.iso binary.hybrid.iso; do
+    [ -f "$C" ] || continue
+    if [ "$(stat -c %Y "$C")" -ge "$MARCO" ]; then NOVA="$C"; break; fi
+  done
+  [ -n "$NOVA" ] || { echo "[Panthera] FALHA: nenhuma ISO nova apos o lb binary_iso (sairia a ISO velha sem o patch)" | tee -a "$LOG"; ls -l --time-style=full-iso *.iso 2>/dev/null | tee -a "$LOG"; exit 3; }
+  echo "[Panthera] ISO reconstruida: $NOVA" | tee -a "$LOG"
+  # O ISO_GEN abaixo escolhe por ordem alfabetica e poderia pegar a ISO velha.
+  # So pode sobrar a recem-reconstruida.
+  for C in live-image-amd64.hybrid.iso binary.hybrid.iso; do
+    if [ "$C" != "$NOVA" ] && [ -f "$C" ]; then
+      echo "[Panthera] descartando ISO anterior ao rebuild: $C" | tee -a "$LOG"
+      rm -f "$C"
+    fi
+  done
 else
   echo "[Panthera] FALHA: sem binary/boot/grub/grub.cfg para corrigir apos o lb build" | tee -a "$LOG"
   exit 3

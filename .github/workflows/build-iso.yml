@@ -125,6 +125,12 @@ jobs:
             grep -nE "FALHA|E: |lb build: |exit non-zero|not (found|available)" ci-out/docker-build.log 2>/dev/null | tail -25
             echo '```'
             echo
+            echo "## Patch do GRUB pos-build + rebuild (se rodou)"
+            echo
+            echo '```'
+            grep -h "grub-patch\|binary_iso\|reconstrui" out/build.log ci-out/docker-build.log 2>/dev/null | tail -20 || echo "(sem linhas do patch no log)"
+            echo '```'
+            echo
             echo "## Saida do hook 0700-bootmenu (se rodou)" 
             echo
             echo '```'
