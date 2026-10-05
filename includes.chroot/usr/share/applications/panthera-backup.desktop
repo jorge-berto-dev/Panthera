@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=Backup Panthera
+Comment=Copia a pasta pessoal para pendrive e restaura de volta.
+Exec=/usr/bin/panthera-backup
+Icon=drive-removable-media
+Terminal=false
+Type=Application
+Categories=System;Archiving;
+Keywords=backup;restaurar;pendrive;copia;seguranca;

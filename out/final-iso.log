@@ -29,6 +29,7 @@
 [OK] scripts/panthera-monitor.py
 [OK] scripts/panthera-limpeza.py
 [OK] scripts/panthera-aparencia.py
+[OK] scripts/panthera-backup.py
 [OK] tests/test-hardening.sh
 [OK] tests/test-apps.sh
 [OK] tests/test-final.sh
@@ -39,6 +40,7 @@
 [OK] includes.chroot/usr/share/applications/panthera-monitor.desktop
 [OK] includes.chroot/usr/share/applications/panthera-limpeza.desktop
 [OK] includes.chroot/usr/share/applications/panthera-aparencia.desktop
+[OK] includes.chroot/usr/share/applications/panthera-backup.desktop
 [OK] includes.chroot/etc/xdg/autostart/panthera-welcome.desktop
 [OK] includes.chroot/etc/sysctl.d/99-panthera.conf
 [OK] includes.chroot/etc/sudoers.d/panthera

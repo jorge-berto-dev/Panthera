@@ -77,3 +77,5 @@ hunspell-pt-br
 # slick-greeter nao aceitam SVG, e sem isso a ISO sai sem papel de parede.
 librsvg2-bin
 xdg-utils
+# rsync: o Backup Panthera copia a pasta pessoal para pendrive com ele
+rsync
