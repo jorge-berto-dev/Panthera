@@ -63,55 +63,23 @@ for CFG in "$BIN/isolinux/live.cfg" "$BIN/isolinux/live.cfg.in"; do
 done
 
 # ---------- UEFI: GRUB ----------
-GRUBCFG="$BIN/boot/grub/grub.cfg"
-if [ -f "$GRUBCFG" ]; then
-  ACHOU=1
-  cp "$GRUBCFG" "$GRUBCFG.panthera-bak"
-  # tema Panthera (fundo pantera 1024x768, selecao #1D83FF)
-  mkdir -p "$BIN/boot/grub/themes/panthera"
-  SRC=""
-  [ -d "$ROOT/config/includes.chroot/usr/share/panthera-src/branding" ] && SRC="$ROOT/config/includes.chroot/usr/share/panthera-src/branding"
-  [ -d "$ROOT/branding" ] && [ -z "$SRC" ] && SRC="$ROOT/branding"
-  if [ -n "$SRC" ]; then
-    [ -f "$SRC/grub/theme.txt" ] && cp "$SRC/grub/theme.txt" "$BIN/boot/grub/themes/panthera/theme.txt"
-    [ -f "$SRC/boot/grub-background.png" ] && cp "$SRC/boot/grub-background.png" "$BIN/boot/grub/themes/panthera/background.png"
-  fi
-  # fontes do GRUB para o tema (sem unicode.pf2 o tema nao carrega e cai no texto)
-  for PF2 in /usr/share/grub/unicode.pf2 /usr/lib/grub/i386-pc/unicode.pf2; do
-    if [ -f "$PF2" ]; then
-      mkdir -p "$BIN/boot/grub/fonts"
-      cp "$PF2" "$BIN/boot/grub/fonts/unicode.pf2" 2>/dev/null || true
-      break
-    fi
-  done
-  # timeout: mostra o menu 5s e inicia sozinho
-  if grep -q "^set timeout=" "$GRUBCFG"; then
-    sed -i -E 's/^set timeout=.*/set timeout=5/' "$GRUBCFG"
-  else
-    printf '\nset timeout=5\n' >> "$GRUBCFG"
-  fi
-  if grep -q "^set default=" "$GRUBCFG"; then
-    sed -i -E 's/^set default=.*/set default=0/' "$GRUBCFG"
-  fi
-  # carrega o tema logo apos o gfxmode, se o tema existir de verdade
-  if [ -f "$BIN/boot/grub/themes/panthera/theme.txt" ] && [ -f "$BIN/boot/grub/themes/panthera/background.png" ]; then
-    if ! grep -q "themes/panthera/theme.txt" "$GRUBCFG"; then
-      # insere UMA vez, depois da linha do terminal grafico (a primeira ocorrencia)
-      awk '
-        !feito && /terminal_output gfxterm/ { print; print "insmod png"; print "insmod jpeg"; print "loadfont ($root)/boot/grub/fonts/unicode.pf2"; print "set theme=($root)/boot/grub/themes/panthera/theme.txt"; print "background_image ($root)/boot/grub/themes/panthera/background.png"; feito=1; next }
-        { print }
-      ' "$GRUBCFG" > "$GRUBCFG.new" && mv "$GRUBCFG.new" "$GRUBCFG"
-    fi
-    echo "[0700-bootmenu] GRUB com tema Panthera + autoboot 5s" | tee -a "$LOG"
-  else
-    echo "[0700-bootmenu] AVISO: tema GRUB incompleto, so autoboot aplicado" | tee -a "$LOG"
-  fi
-  # marca nos titulos das entradas (nunca nos parametros do kernel): troca o
-  # nome inteiro por "Panthera ...". O live-build usa 'simples' ou "duplas"
-  # conforme a versao: trata as duas, senao a marca nao pega e ninguem avisa.
-  sed -i -E "s/'Debian GNU\/Linux([^']*)'/'Panthera\1'/" "$GRUBCFG"
-  sed -i -E 's/"Debian GNU\/Linux([^"]*)"/"Panthera\1"/' "$GRUBCFG"
-  grep -c "Panthera" "$GRUBCFG" | xargs echo "[0700-bootmenu] ocorrencias de Panthera no grub.cfg:"
+# O grub.cfg REAL so existe DEPOIS do "lb build" (verificado na v1.2.1: este
+# hook criou um stub que a geracao real sobrescreveu, e a ISO saiu com o menu
+# Debian). Entao aqui so PRE-POSICIONA os assets do tema em binary/; quem
+# aplica o patch e scripts/panthera-grub-patch.sh, chamado pelo build-iso.sh
+# depois do lb build, seguido de "lb binary_iso".
+THEMEDIR="$BIN/boot/grub/themes/panthera"
+mkdir -p "$THEMEDIR"
+SRC=""
+[ -d "$ROOT/config/includes.chroot/usr/share/panthera-src/branding" ] && SRC="$ROOT/config/includes.chroot/usr/share/panthera-src/branding"
+[ -d "$ROOT/branding" ] && [ -z "$SRC" ] && SRC="$ROOT/branding"
+if [ -n "$SRC" ] && [ -f "$SRC/grub/theme.txt" ] && [ -f "$SRC/boot/grub-background.png" ]; then
+  cp "$SRC/grub/theme.txt" "$THEMEDIR/theme.txt"
+  cp "$SRC/boot/grub-background.png" "$THEMEDIR/background.png"
+  echo "[0700-bootmenu] assets do tema GRUB posicionados (patch vem depois do lb build)" | tee -a "$LOG"
+else
+  echo "[0700-bootmenu] FALHA: sem theme.txt/background.png em $SRC para posicionar" | tee -a "$LOG"
+  exit 1
 fi
 
 if [ "$ACHOU" -eq 0 ]; then

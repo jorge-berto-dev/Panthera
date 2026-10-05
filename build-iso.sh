@@ -31,6 +31,9 @@ if [ "$1" = "--check" ]; then
   done
   [ -x "hooks/live/0700-bootmenu.hook.binary" ] && echo "[OK] hook 0700-bootmenu binario executavel" || { echo "[FALTA] hook 0700-bootmenu"; FAIL=1; }
   bash -n "hooks/live/0700-bootmenu.hook.binary" && echo "[OK] sintaxe 0700-bootmenu" || { echo "[FALHA] sintaxe 0700-bootmenu"; FAIL=1; }
+  bash -n "scripts/panthera-grub-patch.sh" && echo "[OK] sintaxe panthera-grub-patch" || { echo "[FALHA] sintaxe panthera-grub-patch"; FAIL=1; }
+  grep -q "lb binary_iso" build-iso.sh && echo "[OK] ISO reconstruida apos o patch do GRUB" || { echo "[FALHA] sem lb binary_iso: o patch do GRUB nao entraria na ISO"; FAIL=1; }
+  grep -q "panthera-grub-patch.sh binary branding" build-iso.sh && echo "[OK] patch do GRUB apos o lb build" || { echo "[FALHA] patch do GRUB fora de ordem"; FAIL=1; }
   bash -n build-iso.sh && echo "[OK] sintaxe build-iso.sh"
   python3 -m json.tool firefox/policies.json >/dev/null && echo "[OK] policies.json valido" || { echo "[FALHA] policies.json"; FAIL=1; }
   [ -f firefox/distribution.ini ] && echo "[OK] distribution.ini"
@@ -129,6 +132,20 @@ chmod 755 config/includes.chroot/usr/lib/panthera/catalogo.py
 echo "[Panthera] build iniciado $(date -u +%Y-%m-%dT%H:%M:%SZ) base=bookworm"
 lb build
 } 2>&1 | tee "$LOG"
+# Patch do GRUB EFI + reconstrucao da ISO. O grub.cfg real so existe DEPOIS do
+# lb build (os hooks binarios rodam antes da geracao dele). Sem isto, a ISO sai
+# com o menu Debian parado esperando ENTER, como a v1.1.8. O syslinux ja foi
+# corrigido pelo hook 0700; aqui vai o GRUB, e o lb binary_iso reconstrói a ISO
+# a partir do binary/ ja corrigido.
+if [ -f scripts/panthera-grub-patch.sh ] && [ -f binary/boot/grub/grub.cfg ]; then
+  bash scripts/panthera-grub-patch.sh binary branding 2>&1 | tee -a "$LOG"
+  echo "[Panthera] reconstruindo a ISO com o boot corrigido (lb binary_iso)" | tee -a "$LOG"
+  lb binary_iso 2>&1 | tee -a "$LOG"
+else
+  echo "[Panthera] FALHA: sem binary/boot/grub/grub.cfg para corrigir apos o lb build" | tee -a "$LOG"
+  exit 3
+fi
+# Localiza ISO gerada (nome varia por versao do live-build)
 # Localiza ISO gerada (nome varia por versao do live-build)
 ISO_GEN=$(ls live-image-amd64.hybrid.iso binary.hybrid.iso 2>/dev/null | head -1)
 if [ -z "$ISO_GEN" ]; then echo "FALHA: lb build nao gerou ISO. Veja $LOG"; exit 3; fi
