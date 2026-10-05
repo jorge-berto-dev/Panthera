@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=Drivers Panthera
+Comment=Mostra cada peça, o driver em uso e o firmware que falta.
+Exec=/usr/bin/panthera-drivers
+Icon=computer
+Terminal=false
+Type=Application
+Categories=System;HardwareSettings;
+Keywords=drivers;firmware;wifi;video;hardware;placa;

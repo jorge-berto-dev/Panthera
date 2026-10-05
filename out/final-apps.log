@@ -9,6 +9,7 @@
 [OK] compile panthera-limpeza
 [OK] compile panthera-aparencia
 [OK] compile panthera-backup
+[OK] compile panthera-drivers
 [OK] sintaxe scripts/panthera-doctor.sh
 [OK] sintaxe scripts/panthera-codecs.sh
 [OK] sintaxe scripts/panthera-superleve.sh
@@ -22,6 +23,7 @@
 [OK] panthera-limpeza --help
 [OK] panthera-aparencia --help
 [OK] panthera-backup --help
+[OK] panthera-drivers --help
 [OK] welcome --meus-kits
 == 3. Central tem 11 abas (Secao 16) ==
 11 abas: Wi-Fi e Rede, Bluetooth, Aparencia, Som, Energia, Privacidade, Seguranca, Usuarios, Impressoras, Atalhos e Idioma, Sobre
@@ -52,9 +54,10 @@ OK includes.chroot/usr/share/applications/panthera-monitor.desktop
 OK includes.chroot/usr/share/applications/panthera-limpeza.desktop
 OK includes.chroot/usr/share/applications/panthera-aparencia.desktop
 OK includes.chroot/usr/share/applications/panthera-backup.desktop
-[OK] 7 desktop Exec
+OK includes.chroot/usr/share/applications/panthera-drivers.desktop
+[OK] 8 desktop Exec
 [OK] autostart welcome
 == 10. staging usr/bin (build-iso.sh) ==
-[OK] 14 apps em /usr/bin
+[OK] 15 apps em /usr/bin
 [OK] build-iso.sh entrega apps
 APPS PASS. DoD visual (com display): abrir 11 abas, instalar VLC, atualizar, doutor all, welcome.

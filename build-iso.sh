@@ -123,6 +123,7 @@ cp scripts/panthera-monitor.py config/includes.chroot/usr/bin/panthera-monitor
 cp scripts/panthera-limpeza.py config/includes.chroot/usr/bin/panthera-limpeza
 cp scripts/panthera-aparencia.py config/includes.chroot/usr/bin/panthera-aparencia
 cp scripts/panthera-backup.py config/includes.chroot/usr/bin/panthera-backup
+cp scripts/panthera-drivers.py config/includes.chroot/usr/bin/panthera-drivers
 chmod +x config/includes.chroot/usr/bin/panthera-*
 # Catalogo Panthera: fonte unica da Loja, do Bem-vindo e do pool offline.
 # Novo Kit = editar kits/catalogo.json, sem rebuild e sem tocar em Python.
