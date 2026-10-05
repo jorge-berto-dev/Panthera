@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=Monitor Panthera
+Comment=Processador, memória, disco e temperatura. Só observa.
+Exec=/usr/bin/panthera-monitor
+Icon=utilities-system-monitor
+Terminal=false
+Type=Application
+Categories=System;Monitor;
+Keywords=monitor;processador;memoria;disco;temperatura;

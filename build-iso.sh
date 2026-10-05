@@ -119,6 +119,8 @@ cp scripts/panthera-codecs.sh config/includes.chroot/usr/bin/panthera-codecs.sh
 cp scripts/panthera-superleve.sh config/includes.chroot/usr/bin/panthera-superleve
 cp scripts/check-wayland.sh config/includes.chroot/usr/bin/panthera-check-wayland
 cp scripts/panthera-firefox-policies.sh config/includes.chroot/usr/bin/panthera-firefox-policies
+cp scripts/panthera-monitor.py config/includes.chroot/usr/bin/panthera-monitor
+cp scripts/panthera-limpeza.py config/includes.chroot/usr/bin/panthera-limpeza
 chmod +x config/includes.chroot/usr/bin/panthera-*
 # Catalogo Panthera: fonte unica da Loja, do Bem-vindo e do pool offline.
 # Novo Kit = editar kits/catalogo.json, sem rebuild e sem tocar em Python.

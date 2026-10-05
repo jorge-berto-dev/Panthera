@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=Limpeza Panthera
+Comment=Mostra o espaço medido e limpa só o que você marcar.
+Exec=/usr/bin/panthera-limpeza
+Icon=user-trash-full
+Terminal=false
+Type=Application
+Categories=System;FileTools;
+Keywords=limpeza;disco;espaco;lixeira;cache;

@@ -8,7 +8,7 @@ ok() { echo "[OK] $1"; }
 bad() { echo "[FALHA] $1"; FAIL=1; }
 
 echo "== 1. COMPILE-OK (Secao 26.1) =="
-for app in panthera-central panthera-store panthera-updater panthera-welcome panthera-theme-check panthera-catalogo; do
+for app in panthera-central panthera-store panthera-updater panthera-welcome panthera-theme-check panthera-catalogo panthera-monitor panthera-limpeza; do
   python3 -m py_compile "scripts/${app}.py" && ok "compile $app" || bad "compile $app"
 done
 for shf in scripts/panthera-doctor.sh scripts/panthera-codecs.sh scripts/panthera-superleve.sh scripts/check-wayland.sh; do
@@ -16,7 +16,7 @@ for shf in scripts/panthera-doctor.sh scripts/panthera-codecs.sh scripts/panther
 done
 
 echo "== 2. --help sem display =="
-for app in panthera-central panthera-store panthera-updater panthera-welcome; do
+for app in panthera-central panthera-store panthera-updater panthera-welcome panthera-monitor panthera-limpeza; do
   python3 "scripts/${app}.py" --help >/dev/null 2>&1 && ok "$app --help" || bad "$app --help"
 done
 # --meus-kits do Bem-vindo: prova que ele le o catalogo de verdade
@@ -90,12 +90,14 @@ python3 -c "
 import configparser
 for f, exe in [('includes.chroot/usr/share/applications/panthera-central.desktop', '/usr/bin/panthera-central'),
                ('includes.chroot/usr/share/applications/panthera-store.desktop', '/usr/bin/panthera-store'),
-               ('includes.chroot/usr/share/applications/panthera-updater.desktop', '/usr/bin/panthera-updater')]:
+               ('includes.chroot/usr/share/applications/panthera-updater.desktop', '/usr/bin/panthera-updater'),
+               ('includes.chroot/usr/share/applications/panthera-monitor.desktop', '/usr/bin/panthera-monitor'),
+               ('includes.chroot/usr/share/applications/panthera-limpeza.desktop', '/usr/bin/panthera-limpeza')]:
     c = configparser.ConfigParser(interpolation=None)
     assert c.read(f), f
     assert c['Desktop Entry']['Exec'] == exe, f
     print('OK', f)
-" && ok "3 desktop Exec" || bad "3 desktop Exec"
+" && ok "5 desktop Exec" || bad "5 desktop Exec"
 grep -q "Exec=/usr/bin/panthera-welcome.py" includes.chroot/etc/xdg/autostart/panthera-welcome.desktop && ok "autostart welcome" || bad "autostart welcome"
 
 echo "== 10. staging usr/bin (build-iso.sh) =="
@@ -109,10 +111,12 @@ cp scripts/panthera-doctor.sh /tmp/panthera-fase6-staging/usr/bin/panthera-docto
 cp scripts/panthera-codecs.sh /tmp/panthera-fase6-staging/usr/bin/panthera-codecs.sh
 cp scripts/panthera-superleve.sh /tmp/panthera-fase6-staging/usr/bin/panthera-superleve
 cp scripts/check-wayland.sh /tmp/panthera-fase6-staging/usr/bin/panthera-check-wayland
+cp scripts/panthera-monitor.py /tmp/panthera-fase6-staging/usr/bin/panthera-monitor
+cp scripts/panthera-limpeza.py /tmp/panthera-fase6-staging/usr/bin/panthera-limpeza
 cp scripts/panthera-firefox-policies.sh /tmp/panthera-fase6-staging/usr/bin/panthera-firefox-policies
 chmod +x /tmp/panthera-fase6-staging/usr/bin/panthera-*
 N=$(ls /tmp/panthera-fase6-staging/usr/bin/ | wc -l)
-[ "$N" -eq 10 ] && ok "10 apps em /usr/bin" || bad "10 apps em /usr/bin (achado $N)"
+[ "$N" -eq 12 ] && ok "12 apps em /usr/bin" || bad "12 apps em /usr/bin (achado $N)"
 grep -q "config/includes.chroot/usr/bin/panthera-central" build-iso.sh && ok "build-iso.sh entrega apps" || bad "build-iso.sh entrega apps"
 
 if [ "$FAIL" -ne 0 ]; then echo "APPS FALHOU"; exit 1; fi
