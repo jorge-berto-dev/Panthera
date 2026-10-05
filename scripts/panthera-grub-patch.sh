@@ -1,32 +1,60 @@
 #!/bin/bash
 # scripts/panthera-grub-patch.sh <dir-binary> <dir-branding>
-# Aplica tema + autoboot + marca Panthera no grub.cfg EFI JA GERADO.
+# Aplica tema + autoboot + marca Panthera no menu de boot JA GERADO.
 #
-# Por que existe separado do hook 0700: o grub.cfg real do live-build e escrito
-# DEPOIS que os hooks binarios rodam. Na v1.2.1 o hook nao achou o arquivo,
-# criou um stub com so "set timeout=5", e a geracao real sobrescreveu depois:
-# a ISO saiu com o menu Debian e ninguem avisou. Entao o 0700 cuida do syslinux
-# (que existe cedo) e este script roda no build-iso.sh DEPOIS do "lb build",
-# seguido de "lb binary_iso" para reconstruir a ISO a partir do binary/ ja
-# corrigido.
+# Roda no build-iso.sh DEPOIS do "lb build", seguido de "lb binary_iso".
+# Motivo, verificado na v1.2.1: o grub.cfg real so e escrito depois que os
+# hooks binarios rodam. Patch em hook binario criou um stub que a geracao real
+# sobrescreveu, e a ISO saiu com o menu Debian sem ninguem avisar.
 #
-# Idempotente: rodar duas vezes nao duplica nada. Reprova se o grub.cfg nao
-# existir, porque ai nao ha o que corrigir e seria outra surpresa silenciosa.
+# Cada transformacao abaixo foi extraida da ISO v1.1.8 de verdade, nao de
+# palpite sobre o formato do live-build. E cada uma REPROVA se a string
+# esperada sumir (formato mudou) em vez de fingir que aplicou.
+#
+# Idempotente: rodar duas vezes nao duplica nada.
 set -e
 BIN="${1:?uso: $0 <dir-binary> <dir-branding>}"
 SRC="${2:?uso: $0 <dir-binary> <dir-branding>}"
+N=0
+ok() { N=$((N + 1)); echo "[boot-patch] OK: $1"; }
+falha() { echo "[boot-patch] FALHA: $1" >&2; exit 1; }
+
+[ -d "$BIN" ] || falha "sem dir-binary $BIN"
+[ -d "$SRC" ] || falha "sem dir-branding $SRC"
+
+# ---------- UEFI: grub.cfg (entradas "Live system (amd64)", sem "Debian") ----------
 GRUBCFG="$BIN/boot/grub/grub.cfg"
+[ -f "$GRUBCFG" ] || falha "sem $GRUBCFG para corrigir"
+cp "$GRUBCFG" "$GRUBCFG.panthera-bak" 2>/dev/null || true
+if grep -q 'menuentry "Panthera"' "$GRUBCFG"; then
+  echo "[boot-patch] entradas do GRUB ja marcadas, mantendo" >&2
+elif grep -q 'menuentry "Live system (amd64)"' "$GRUBCFG"; then
+  sed -i 's/menuentry "Live system (amd64)"/menuentry "Panthera"/' "$GRUBCFG"
+  sed -i 's/menuentry "Live system (amd64 fail-safe mode)"/menuentry "Panthera (modo seguro)"/' "$GRUBCFG"
+else
+  falha "formato do grub.cfg mudou: sem entrada Live nem Panthera"
+fi
+grep -q 'menuentry "Panthera"' "$GRUBCFG" || falha "marca nao pegou no grub.cfg"
+ok "entradas do GRUB: Panthera + modo seguro"
 
-[ -f "$GRUBCFG" ] || { echo "[grub-patch] FALHA: sem $GRUBCFG para corrigir" >&2; exit 1; }
-cp "$GRUBCFG" "$GRUBCFG.panthera-bak"
+# ---------- UEFI: config.cfg (e aqui que mora o timeout; sem ele, espera ENTER) ----------
+CFG="$BIN/boot/grub/config.cfg"
+[ -f "$CFG" ] || falha "sem $CFG (e dele que vem o timeout)"
+cp "$CFG" "$CFG.panthera-bak" 2>/dev/null || true
+if ! grep -q "^set timeout=" "$CFG"; then
+  sed -i '/^set default=/a set timeout=5' "$CFG"
+fi
+grep -q "^set timeout=5" "$CFG" || falha "autoboot nao pegou no config.cfg"
+ok "GRUB inicia sozinho em 5s"
 
-# tema Panthera (fundo pantera 1024x768, selecao #1D83FF)
-mkdir -p "$BIN/boot/grub/themes/panthera"
-[ -f "$SRC/grub/theme.txt" ] || { echo "[grub-patch] FALHA: sem theme.txt em $SRC" >&2; exit 1; }
-[ -f "$SRC/boot/grub-background.png" ] || { echo "[grub-patch] FALHA: sem background.png em $SRC" >&2; exit 1; }
-cp "$SRC/grub/theme.txt" "$BIN/boot/grub/themes/panthera/theme.txt"
-cp "$SRC/boot/grub-background.png" "$BIN/boot/grub/themes/panthera/background.png"
-# fonte unicode para o tema (o tema cai sem ela); procura no host e no chroot
+# ---------- UEFI: splash + tema (theme.cfg usa live-theme/ se splash.png existe) ----------
+[ -f "$SRC/boot/grub-background.png" ] || falha "sem background.png em $SRC"
+cp "$SRC/boot/grub-background.png" "$BIN/boot/grub/splash.png"
+mkdir -p "$BIN/boot/grub/live-theme"
+[ -f "$SRC/grub/theme.txt" ] || falha "sem theme.txt em $SRC"
+cp "$SRC/grub/theme.txt" "$BIN/boot/grub/live-theme/theme.txt"
+cp "$SRC/boot/grub-background.png" "$BIN/boot/grub/live-theme/background.png"
+# fontes para o tema (sem unicode.pf2 o tema cai para texto, sem aviso)
 for PF2 in /usr/share/grub/unicode.pf2 /usr/lib/grub/i386-pc/unicode.pf2; do
   if [ -f "$PF2" ]; then
     mkdir -p "$BIN/boot/grub/fonts"
@@ -34,30 +62,77 @@ for PF2 in /usr/share/grub/unicode.pf2 /usr/lib/grub/i386-pc/unicode.pf2; do
     break
   fi
 done
+ok "splash + tema GRUB posicionados"
 
-# timeout: mostra o menu 5s e inicia sozinho, que nem o Mint
-if grep -q "^set timeout=" "$GRUBCFG"; then
-  sed -i -E 's/^set timeout=.*/set timeout=5/' "$GRUBCFG"
+# ---------- Legacy: entradas do live.cfg ----------
+LIVE="$BIN/isolinux/live.cfg"
+if [ -f "$LIVE" ]; then
+  cp "$LIVE" "$LIVE.panthera-bak" 2>/dev/null || true
+  if grep -q "menu label \^Panthera" "$LIVE"; then
+    echo "[boot-patch] live.cfg ja marcado, mantendo" >&2
+  elif grep -q "Live system (amd64)" "$LIVE"; then
+    sed -i 's/menu label \^Live system (amd64)/menu label ^Panthera/' "$LIVE"
+    sed -i 's/menu label Live system (amd64 fail-safe mode)/menu label Panthera (modo seguro)/' "$LIVE"
+  else
+    falha "formato do live.cfg mudou: sem entrada Live nem Panthera"
+  fi
+  grep -q "menu label \^Panthera" "$LIVE" || falha "marca nao pegou no live.cfg"
+  ok "entradas Legacy: Panthera + modo seguro"
 else
-  printf '\nset timeout=5\n' >> "$GRUBCFG"
-fi
-if grep -q "^set default=" "$GRUBCFG"; then
-  sed -i -E 's/^set default=.*/set default=0/' "$GRUBCFG"
+  falha "sem $LIVE"
 fi
 
-# carrega o tema uma vez, depois da linha do terminal grafico
-if ! grep -q "themes/panthera/theme.txt" "$GRUBCFG"; then
-  awk '
-    !feito && /terminal_output gfxterm/ { print; print "insmod png"; print "insmod jpeg"; print "loadfont ($root)/boot/grub/fonts/unicode.pf2"; print "set theme=($root)/boot/grub/themes/panthera/theme.txt"; print "background_image ($root)/boot/grub/themes/panthera/background.png"; feito=1; next }
-    { print }
-  ' "$GRUBCFG" > "$GRUBCFG.new" && mv "$GRUBCFG.new" "$GRUBCFG"
+# ---------- Legacy: titulo, autoboot e mensagem ----------
+for CFG2 in "$BIN/isolinux/isolinux.cfg" "$BIN/isolinux/menu.cfg"; do
+  [ -f "$CFG2" ] || continue
+  if ! grep -qi "Panthera" "$CFG2"; then
+    if grep -qi "^MENU TITLE" "$CFG2"; then
+      sed -i -E 's/^MENU TITLE.*/MENU TITLE Panthera - LIBERDADE PARA O SEU MUNDO/i' "$CFG2"
+    else
+      printf 'MENU TITLE Panthera - LIBERDADE PARA O SEU MUNDO\n' >> "$CFG2"
+    fi
+  fi
+done
+ISO="$BIN/isolinux/isolinux.cfg"
+if [ -f "$ISO" ]; then
+  if grep -qi "^TIMEOUT" "$ISO"; then
+    sed -i -E 's/^TIMEOUT.*/TIMEOUT 50/i' "$ISO"
+  else
+    printf '\nTIMEOUT 50\n' >> "$ISO"
+  fi
+  grep -qi "^TIMEOUT 50" "$ISO" || falha "autoboot nao pegou no isolinux.cfg"
+  ok "Legacy inicia sozinho em 5s"
+fi
+STD="$BIN/isolinux/stdmenu.cfg"
+if [ -f "$STD" ]; then
+  cp "$STD" "$STD.panthera-bak" 2>/dev/null || true
+  if ! grep -q "Iniciando em 5s" "$STD"; then
+    sed -i 's/^menu tabmsg .*/menu tabmsg Iniciando em 5s... ENTER para bootar, TAB para editar/' "$STD"
+  fi
+  grep -q "Iniciando em 5s" "$STD" || falha "tabmsg nao pegou"
+  ok "mensagem do menu em portugues"
 fi
 
-# marca nos titulos ('simples' e "duplas"; nunca nos parametros do kernel)
-sed -i -E "s/'Debian GNU\/Linux([^']*)'/'Panthera\1'/" "$GRUBCFG"
-sed -i -E 's/"Debian GNU\/Linux([^"]*)"/"Panthera\1"/' "$GRUBCFG"
+# ---------- Legacy: splash com a pantera (tira o swirl amarelo do Debian) ----------
+[ -f "$SRC/boot/grub-background.png" ] || falha "sem background para o splash Legacy"
+cp "$SRC/boot/grub-background.png" "$BIN/isolinux/splash.png"
+python3 -c "
+from PIL import Image
+Image.open('$SRC/boot/grub-background.png').resize((800, 600)).save('$BIN/isolinux/splash800x600.png')
+" 2>/dev/null || cp "$SRC/boot/grub-background.png" "$BIN/isolinux/splash800x600.png"
+ok "splash Legacy com a pantera"
 
-N=$(grep -c "Panthera" "$GRUBCFG" || true)
-[ "$N" -ge 1 ] || { echo "[grub-patch] FALHA: nenhuma marca Panthera apos o patch" >&2; exit 1; }
-grep -q "^set timeout=5" "$GRUBCFG" || { echo "[grub-patch] FALHA: sem autoboot" >&2; exit 1; }
-echo "[grub-patch] OK: tema + autoboot 5s + $N marcas Panthera em $GRUBCFG"
+# ---------- .disk/info (alimenta o search do GRUB e a linha Built:) ----------
+INFO="$BIN/.disk/info"
+if [ -f "$INFO" ]; then
+  cp "$INFO" "$INFO.panthera-bak" 2>/dev/null || true
+  if ! grep -q "^Panthera" "$INFO"; then
+    DATA=$(grep -oE '[0-9]{8}-[0-9]{2}:[0-9]{2}' "$INFO" | head -1)
+    [ -z "$DATA" ] && DATA=$(date -u +%Y%m%d-%H:%M)
+    echo "Panthera v1 - Official Snapshot amd64 LIVE Binary $DATA" > "$INFO"
+  fi
+  grep -q "^Panthera" "$INFO" || falha ".disk/info nao pegou"
+  ok ".disk/info com a marca Panthera"
+fi
+
+echo "[boot-patch] OK: $N transformacoes aplicadas em $BIN"
