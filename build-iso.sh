@@ -148,6 +148,12 @@ lb build
 if [ -f scripts/panthera-grub-patch.sh ] && [ -f binary/boot/grub/grub.cfg ]; then
   bash scripts/panthera-grub-patch.sh binary branding 2>&1 | tee -a "$LOG"
   echo "[Panthera] reconstruindo a ISO com o boot corrigido (lb binary_iso)" | tee -a "$LOG"
+  # O live-build carimba estagios concluidos em .build/ e pula re-execucao com
+  # "W: Skipping binary_iso, already done". Sem remover o carimbo, o rebuild
+  # nunca acontece e a guarda de mtime reprova com razao (foi o que a v1.2.8
+  # mostrou). Remove o carimbo para forcar.
+  ls .build/ 2>/dev/null | tee -a "$LOG" || true
+  rm -f .build/binary_iso
   MARCO=$(date +%s)
   lb binary_iso 2>&1 | tee -a "$LOG"
   RC=${PIPESTATUS[0]}
