@@ -37,14 +37,17 @@ fi
 grep -q 'menuentry "Panthera"' "$GRUBCFG" || falha "marca nao pegou no grub.cfg"
 ok "entradas do GRUB: Panthera + modo seguro"
 
-# ---------- UEFI: config.cfg (e aqui que mora o timeout; sem ele, espera ENTER) ----------
-CFG="$BIN/boot/grub/config.cfg"
-[ -f "$CFG" ] || falha "sem $CFG (e dele que vem o timeout)"
-cp "$CFG" "$CFG.panthera-bak" 2>/dev/null || true
-if ! grep -q "^set timeout=" "$CFG"; then
-  sed -i '/^set default=/a set timeout=5' "$CFG"
+# ---------- UEFI: autoboot (no grub.cfg, NAO no config.cfg) ----------
+# config.cfg nao existe em binary/ na hora do pos-build: ele so aparece na ISO
+# final, gerado na montagem. Tentar corrigir la era FALHA garantida (foi o que
+# matou a v1.3.0). Como o grub.cfg faz "source /boot/grub/config.cfg" na
+# PRIMEIRA linha, um "set timeout=5" nele sobrescreve qualquer valor do config.
+if grep -q "^set timeout=" "$GRUBCFG"; then
+  sed -i -E 's/^set timeout=.*/set timeout=5/' "$GRUBCFG"
+else
+  sed -i '/^source \/boot\/grub\/config.cfg/a set timeout=5' "$GRUBCFG"
 fi
-grep -q "^set timeout=5" "$CFG" || falha "autoboot nao pegou no config.cfg"
+grep -q "^set timeout=5" "$GRUBCFG" || falha "autoboot nao pegou no grub.cfg"
 ok "GRUB inicia sozinho em 5s"
 
 # ---------- UEFI: splash + tema (theme.cfg usa live-theme/ se splash.png existe) ----------

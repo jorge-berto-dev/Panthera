@@ -147,6 +147,9 @@ lb build
 # Usa PIPESTATUS e ainda confere pelo relogio que a ISO saiu do rebuild.
 if [ -f scripts/panthera-grub-patch.sh ] && [ -f binary/boot/grub/grub.cfg ]; then
   bash scripts/panthera-grub-patch.sh binary branding 2>&1 | tee -a "$LOG"
+  # O status do pipeline e o do tee: sem PIPESTATUS, falha do patch seria
+  # engolida e a ISO sairia sem timeout (foi o que matou a v1.3.0 em silencio).
+  [ "${PIPESTATUS[0]}" -eq 0 ] || { echo "[Panthera] FALHA: patch do GRUB reprovou" | tee -a "$LOG"; exit 3; }
   echo "[Panthera] reconstruindo a ISO com o boot corrigido (lb binary_iso)" | tee -a "$LOG"
   # O live-build carimba estagios concluidos em .build/ e pula re-execucao com
   # "W: Skipping binary_iso, already done". Sem remover o carimbo, o rebuild
