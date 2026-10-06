@@ -178,6 +178,8 @@ xorriso -osirrox on -indev "$ISO" \
 grep -q "^set timeout=5" "$T2/grub.cfg" 2>/dev/null \
   && ok "GRUB inicia sozinho em 5s (sem ENTER)" \
   || bad "GRUB sem autoboot: usuario tem que apertar ENTER"
+echo "--- grub.cfg (timeout/menuentry, para diagnostico) ---"
+grep -E "^(set timeout|set default|menuentry)" "$T2/grub.cfg" 2>/dev/null || echo "(sem linhas timeout/menuentry)"
 grep -q "Panthera" "$T2/grub.cfg" 2>/dev/null \
   && ok "menu GRUB com a marca Panthera" \
   || bad "menu GRUB ainda diz Debian"

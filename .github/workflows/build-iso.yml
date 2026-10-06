@@ -140,7 +140,7 @@ jobs:
             echo "## Checagem de conteudo da ISO (se houver)"
             echo
             echo '```'
-            grep -E "^\[FALHA\]" ci-out/conteudo.log 2>/dev/null || echo "(nao rodou, ou a ISO passou)"
+            grep -E "^(\[FALHA\]|---|set timeout|set default|menuentry|menu label|TIMEOUT|timeout|MENU TITLE)" ci-out/conteudo.log 2>/dev/null | head -30 || echo "(nao rodou, ou a ISO passou)"
             echo '```'
             echo
             echo "## Fim do log do build"
